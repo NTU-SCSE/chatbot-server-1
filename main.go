@@ -64,6 +64,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
 	//Set the query string and your current user identifier.
     // TODO: Set the proper sessionID per user.
+    // qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "123123", Contexts: []apiai.Context{apiai.Context{Name: t.Context}} })
     qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "123123"})
     // qr, err := client.Query(apiai.Query{Query: []string{"What are the available scholarship for ASEAN students?"}, SessionId: "123123"})
     
@@ -73,8 +74,16 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     // fmt.Printf("%v", qr.Result.Action)
     // qwordValue := qr.Result.Params["QWord.original"].(string)
     qwordValue := "What"
-    entityValue := qr.Result.Params["Entity"].(string)
-    groupValue := qr.Result.Params["Group"].(string)
+    entityValue := ""
+    groupValue := ""
+    if(qr.Result.Params["Entity"] != nil) {
+        entityValue = qr.Result.Params["Entity"].(string)
+    }
+    if(qr.Result.Params["Group"] != nil && qr.Result.Params["Group"] != "") {
+        groupValue = qr.Result.Params["Group"].(string)
+    } else if(entityValue != "") {
+        groupValue = "general"
+    }
     // entityValue := "Scholarship"
     // groupValue := "ASEAN"
     fmt.Printf("-----")
@@ -83,21 +92,32 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     
     var resultMap map[string]string
     resultMap = make(map[string]string)
+    
+    resultMap["Result"] = qr.Result.Fulfillment.Speech
+    resultMap["Context"] = ""
+
+    // Handling context
+    // TODO: Handle multiple contexts
+    // if(len(qr.Result.Contexts) > 0) {
+    //     resultMap["Context"] = qr.Result.Contexts[0].Name
+    // }
+    // fmt.Printf("Context: %v", resultMap["Context"])
+
+    
     for _, elem := range all {
         if(strings.Compare(entityValue, elem.Entity) == 0 && strings.Compare(groupValue, elem.Query) == 0) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
-            fmt.Printf("%v", elem.Value)
+            fmt.Printf("Found: %v", elem.Value)
             resultMap["Result"] = elem.Value
         }
     }
-    // for ind, _ := range all {
-    //     fmt.Printf("%v", ind)
-    // }
-    fmt.Printf("-----")
-    resultJson, _ := json.Marshal(resultMap)
-    fmt.Printf("%v", string(resultJson))
 
-    //profile := response{qr.Result.Fulfillment.Speech}
-    //js, err := json.Marshal(profile)
+    // TODO: Handle this properly
+    if(resultMap["Result"] == "") {
+        resultMap["Result"] = "One more time?"
+    }
+    
+    resultJson, _ := json.Marshal(resultMap)
+
 
     if err != nil {
         http.Error(rw, err.Error(), http.StatusInternalServerError)
