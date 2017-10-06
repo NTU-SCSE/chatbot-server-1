@@ -17,6 +17,7 @@ import (
 
 type query_struct struct {
     Query string
+    SessionID string
 }
 
 type response struct {
@@ -65,7 +66,8 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 	//Set the query string and your current user identifier.
     // TODO: Set the proper sessionID per user.
     // qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "123123", Contexts: []apiai.Context{apiai.Context{Name: t.Context}} })
-    qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "123123"})
+    qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
+    
     // qr, err := client.Query(apiai.Query{Query: []string{"What are the available scholarship for ASEAN students?"}, SessionId: "123123"})
     
     // params, _ := json.Marshal(qr.Result.Params)
