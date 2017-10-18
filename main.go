@@ -81,22 +81,29 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     if(qr.Result.Params["Entity"] != nil) {
         entityValue = qr.Result.Params["Entity"].(string)
     }
-    if(qr.Result.Params["Group"] != nil && qr.Result.Params["Group"] != "") {
-        groupValue = qr.Result.Params["Group"].(string)
+    if(qr.Result.Params["Group"] != nil && len(qr.Result.Params["Group"].([]string)) > 0) {
+        // TODO: handle multiple group values
+        groupValue = qr.Result.Params["Group"].([]string)[0]
     } else if(entityValue != "") {
         groupValue = "general"
     }
-    // entityValue := "Scholarship"
-    // groupValue := "ASEAN"
-    fmt.Printf("-----")
-    fmt.Printf("%v %v %v",qwordValue, entityValue, groupValue)
-    fmt.Printf("-----")
-    
+
     var resultMap map[string]string
     resultMap = make(map[string]string)
     
     resultMap["Result"] = qr.Result.Fulfillment.Speech
     resultMap["Context"] = ""
+
+    // TODO: Handle multiple intents.
+    if(qr.Result.Contexts != nil && len(qr.Result.Contexts) > 0) {
+        resultMap["Context"] = qr.Result.Contexts[0].Name
+    }
+    
+    fmt.Printf("-----")
+    fmt.Printf("%v %v %v",qwordValue, entityValue, groupValue)
+    fmt.Printf("-----")
+    
+    
 
     // Handling context
     // TODO: Handle multiple contexts
