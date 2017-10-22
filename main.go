@@ -13,6 +13,7 @@ import (
     "./storage"
 "strings"    
 "github.com/marcossegovia/apiai-go"    
+"os"
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -25,6 +26,17 @@ type query_struct struct {
 type response struct {
     Response string
 }
+
+type course struct {
+    Code string `json:"code"`
+    Name string `json:"name"`
+    AU int `json:"AU"`
+    PreReq string `json:"preReq"`
+    Description string `json:"description"`
+}
+
+var courses []course
+
 func handler(w http.ResponseWriter, r *http.Request) {
     // TODO: Handle this properly.
 	fmt.Fprintf(w, "Hello, world! Your URL: %s", r.URL.Path[1:])
@@ -134,6 +146,15 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+    // Get the data of courses from json files
+    file, err := ioutil.ReadFile("./cs.json")
+    if err != nil {
+        fmt.Println(err.Error())
+    }
+    json.Unmarshal(file, &courses)
+
+    // start server
+    
     r := mux.NewRouter()
     r.HandleFunc("/", handler)
     r.HandleFunc("/query", queryHandler)
