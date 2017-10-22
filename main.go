@@ -1,7 +1,9 @@
 package main
 
 import (
-	"fmt"
+    "fmt"
+    "sort"
+    "reflect"
 	"net/http"
 	
     "io/ioutil"
@@ -40,6 +42,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     }
 
     var t query_struct
+
     err = json.Unmarshal(body, &t)
     if err != nil {
         panic(err)
@@ -52,42 +55,32 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
             SpeechLang: "en-US", //Default en-US
         },
     )
-    // ai := apiaigo.APIAI{
-	// 	AuthToken: "031636d290f341729417585f09f1ebc4",
-	// 	Language:  "en-US",
-	// 	SessionID: "32314214",
-	// 	Version:   "20150910",
-	// }
-
+    
     if err != nil {
         fmt.Printf("%v", err)
     }
 
 	//Set the query string and your current user identifier.
-    // TODO: Set the proper sessionID per user.
-    // qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "123123", Contexts: []apiai.Context{apiai.Context{Name: t.Context}} })
+
     qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
-    
-    // qr, err := client.Query(apiai.Query{Query: []string{"What are the available scholarship for ASEAN students?"}, SessionId: "123123"})
-    
-    // params, _ := json.Marshal(qr.Result.Params)
-    // qr, err := ai.SendText("What are the available scholarship for ASEAN students?")
-    fmt.Printf("%v", err)
-    // fmt.Printf("%v", qr.Result.Action)
-    // qwordValue := qr.Result.Params["QWord.original"].(string)
     qwordValue := "What"
     entityValue := ""
-    groupValue := ""
+    groupValue := make([]string, 0)
+    
     if(qr.Result.Params["Entity"] != nil) {
         entityValue = qr.Result.Params["Entity"].(string)
+    } else if(qr.Result.Metadata.IntentName == "") {
+        entityValue = qr.Result.Metadata.IntentName
     }
+    
     if(qr.Result.Params["Group"] != nil && len(qr.Result.Params["Group"].([]string)) > 0) {
         // TODO: handle multiple group values
-        groupValue = qr.Result.Params["Group"].([]string)[0]
+        groupValue = append(groupValue, qr.Result.Params["Group"].([]string)...)
+        sort.Strings(groupValue)
     } else if(entityValue != "") {
-        groupValue = "general"
+        groupValue = append(groupValue, "general")
     }
-
+    
     var resultMap map[string]string
     resultMap = make(map[string]string)
     
@@ -114,7 +107,9 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
     
     for _, elem := range all {
-        if(strings.Compare(entityValue, elem.Entity) == 0 && strings.Compare(groupValue, elem.Query) == 0) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
+        dbValue := strings.Split(elem.Query, ",")
+        sort.Strings(dbValue)
+        if(strings.Compare(entityValue, elem.Entity) == 0 && reflect.DeepEqual(groupValue, dbValue)) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
             fmt.Printf("Found: %v", elem.Value)
             resultMap["Result"] = elem.Value
         }
@@ -139,18 +134,6 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-    // _, _ = storage.NewDB("test.sqlite3")
-    // if(err != nil) {
-    //     fmt.Printf("%v\n", err)
-    // }
-    // all, err := db.ListAll()
-    // if(err != nil) {
-    //     fmt.Printf("%v\n", err)
-    // }
-    // for _, elem := range all {
-    //     fmt.Printf(elem.Query)
-    // }
-    // fmt.Printf("%v", all)
     r := mux.NewRouter()
     r.HandleFunc("/", handler)
     r.HandleFunc("/query", queryHandler)
