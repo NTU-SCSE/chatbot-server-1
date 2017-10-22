@@ -11,9 +11,9 @@ import (
     "github.com/gorilla/mux"
     "github.com/rs/cors"
     "./storage"
-"strings"    
-"github.com/marcossegovia/apiai-go"    
-"os"
+    "strconv"
+    "strings"    
+    "github.com/marcossegovia/apiai-go"    
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -36,6 +36,17 @@ type course struct {
 }
 
 var courses []course
+
+
+func contains(slice []string, item string) bool {
+    set := make(map[string]struct{}, len(slice))
+    for _, s := range slice {
+        set[s] = struct{}{}
+    }
+
+    _, ok := set[item] 
+    return ok
+}
 
 func handler(w http.ResponseWriter, r *http.Request) {
     // TODO: Handle this properly.
@@ -73,21 +84,35 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     }
 
 	//Set the query string and your current user identifier.
-
+    
     qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
     qwordValue := "What"
     entityValue := ""
+    intentValue := ""
     groupValue := make([]string, 0)
     
+    if(qr.Result.Metadata.IntentName != "") {
+        intentValue = qr.Result.Metadata.IntentName
+    }
+
     if(qr.Result.Params["Entity"] != nil) {
         entityValue = qr.Result.Params["Entity"].(string)
-    } else if(qr.Result.Metadata.IntentName == "") {
-        entityValue = qr.Result.Metadata.IntentName
+    }
+    if(entityValue == "") {
+        entityValue = intentValue
     }
     
-    if(qr.Result.Params["Group"] != nil && len(qr.Result.Params["Group"].([]string)) > 0) {
+    paramValue := ""
+    for key, _:= range qr.Result.Params {
+        fmt.Printf("%v\n", key)
+        paramValue = key
+    }
+    if(qr.Result.Params[paramValue] != nil && len(qr.Result.Params[paramValue].([]interface{})) > 0) {
         // TODO: handle multiple group values
-        groupValue = append(groupValue, qr.Result.Params["Group"].([]string)...)
+        for _, v := range qr.Result.Params[paramValue].([]interface{}) {
+            groupValue = append(groupValue, v.(string))
+        }
+        
         sort.Strings(groupValue)
     } else if(entityValue != "") {
         groupValue = append(groupValue, "general")
@@ -117,13 +142,39 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     // }
     // fmt.Printf("Context: %v", resultMap["Context"])
 
-    
+    // matching with Database
     for _, elem := range all {
-        dbValue := strings.Split(elem.Query, ",")
+        dbValue := strings.Split(elem.Query, ",")    
         sort.Strings(dbValue)
         if(strings.Compare(entityValue, elem.Entity) == 0 && reflect.DeepEqual(groupValue, dbValue)) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
-            fmt.Printf("Found: %v", elem.Value)
             resultMap["Result"] = elem.Value
+        }
+    }
+
+    // matching with json
+    courseIntent := []string{"course description", "course name", "au", "prereq"}
+    courseCode := ""
+    courseAttr := ""
+    for _, param := range groupValue {
+        if !contains(courseIntent, param) {
+            courseCode = param
+        } else {
+            courseAttr = param
+        }
+    }
+    
+    for _, course := range courses {
+        if strings.ToLower(course.Code) == strings.ToLower(courseCode) {
+            if(courseAttr == "course description") {
+                resultMap["Result"] = course.Description
+            } else if(courseAttr == "course name") {
+                resultMap["Result"] = course.Name
+            } else if(courseAttr == "au") {
+                resultMap["Result"] = strconv.Itoa(course.AU)
+            } else if(courseAttr == "prereq") {
+                resultMap["Result"] = course.PreReq
+            }
+            
         }
     }
 
@@ -154,7 +205,7 @@ func main() {
     json.Unmarshal(file, &courses)
 
     // start server
-    
+
     r := mux.NewRouter()
     r.HandleFunc("/", handler)
     r.HandleFunc("/query", queryHandler)
