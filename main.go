@@ -86,7 +86,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 	//Set the query string and your current user identifier.
     
     qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
-    qwordValue := "What"
+    //qwordValue := "What"
     entityValue := ""
     intentValue := ""
     groupValue := make([]string, 0)
@@ -121,19 +121,13 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     var resultMap map[string]string
     resultMap = make(map[string]string)
     
-    resultMap["Result"] = qr.Result.Fulfillment.Speech
+    resultMap["Result"] = ""
     resultMap["Context"] = ""
 
     // TODO: Handle multiple intents.
     if(qr.Result.Contexts != nil && len(qr.Result.Contexts) > 0) {
         resultMap["Context"] = qr.Result.Contexts[0].Name
     }
-    
-    fmt.Printf("-----")
-    fmt.Printf("%v %v %v",qwordValue, entityValue, groupValue)
-    fmt.Printf("-----")
-    
-    
 
     // Handling context
     // TODO: Handle multiple contexts
@@ -152,37 +146,53 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     }
 
     // matching with json
-    courseIntent := []string{"course description", "course name", "au", "prereq"}
-    courseCode := ""
-    courseAttr := ""
-    for _, param := range groupValue {
-        if !contains(courseIntent, param) {
-            courseCode = param
-        } else {
-            courseAttr = param
-        }
-    }
-    
-    for _, course := range courses {
-        if strings.ToLower(course.Code) == strings.ToLower(courseCode) {
-            if(courseAttr == "course description") {
-                resultMap["Result"] = course.Description
-            } else if(courseAttr == "course name") {
-                resultMap["Result"] = course.Name
-            } else if(courseAttr == "au") {
-                resultMap["Result"] = strconv.Itoa(course.AU)
-            } else if(courseAttr == "prereq") {
-                resultMap["Result"] = course.PreReq
+    if(resultMap["Result"] == "") {
+        courseIntent := []string{"course description", "course name", "au", "prereq", "course code"}
+        courseCode := ""
+        courseName := ""
+        courseAttr := ""
+        for _, param := range groupValue {
+            if !contains(courseIntent, param) {
+                courseCode = param
+                courseName = param
+            } else {
+                courseAttr = param
             }
-            
+        }
+        
+        // TODO: Fixed white space trimming properly
+        for _, course := range courses {
+            if strings.ToLower(course.Code) == strings.ToLower(courseCode) || 
+            strings.ToLower(strings.TrimSpace(course.Name)) == strings.ToLower(courseName) {
+                if(courseAttr == "course description") {
+                    resultMap["Result"] = course.Description
+                } else if(courseAttr == "course name") {
+                    resultMap["Result"] = course.Name
+                } else if(courseAttr == "au") {
+                    resultMap["Result"] = strconv.Itoa(course.AU)
+                } else if(courseAttr == "prereq") {
+                    resultMap["Result"] = course.PreReq
+                } else if(courseAttr == "course code") {
+                    if(resultMap["Result"] == "") {
+                        resultMap["Result"] = course.Code
+                    } else {
+                        resultMap["Result"] = "CE/CZ" + course.Code[2:]
+                    }
+                    
+                }
+                
+            }
         }
     }
 
+    // nothing matched
     // TODO: Handle this properly
     if(resultMap["Result"] == "") {
         resultMap["Result"] = "One more time?"
     }
-    
+    // or we can use:
+    // qr.Result.Fulfillment.Speech
+
     resultJson, _ := json.Marshal(resultMap)
 
 
@@ -203,7 +213,13 @@ func main() {
         fmt.Println(err.Error())
     }
     json.Unmarshal(file, &courses)
-
+    var CECourses []course
+    file, err = ioutil.ReadFile("./ce.json")
+    if err != nil {
+        fmt.Println(err.Error())
+    }
+    json.Unmarshal(file, &CECourses)
+    courses = append(courses, CECourses...)
     // start server
 
     r := mux.NewRouter()
@@ -213,3 +229,6 @@ func main() {
     // Apply the CORS middleware to our top-level router, with the defaults.
     http.ListenAndServe(":8080", cors.Default().Handler(r))
 }
+// todo: fix typo in application security json data
+// todo: fix computer security entity
+// todo: fix ce1004
