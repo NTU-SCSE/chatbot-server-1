@@ -175,7 +175,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
                 } else if(courseAttr == "course code") {
                     if(resultMap["Result"] == "") {
                         resultMap["Result"] = course.Code
-                    } else {
+                    } else if course.Code[2] != '/' {
                         resultMap["Result"] = "CE/CZ" + course.Code[2:]
                     }
                     
