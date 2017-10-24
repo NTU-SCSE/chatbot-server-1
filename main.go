@@ -35,8 +35,55 @@ type course struct {
     Description string `json:"description"`
 }
 
-var courses []course
+type class struct {
+    Code string `json:"code"`
+    Index string `json:"index"`
+    Type string `json:"type"`
+    Group string `json:"group"`
+    Day string `json:"day"`
+    Time string `json:"time"`
+    Venue string `json:"venue"`
+    Remark string `json:"remark"`
+}
 
+var courses []course
+var classes []class
+
+func getCourseCode(param string) (string, string) {
+    param = strings.TrimSpace(param)
+    
+    // TODO: if query is "CZ#### code", it won't return CE/CZ#### format, fix this
+    // TODO: api.ai still not trained yet to recognize CE/CZ#### format
+    if _, err := strconv.Atoi(param[len(param)-4:]); err == nil {
+        return param, ""
+    }
+    result := ""
+    auxResult := ""
+
+    for _, course := range courses {
+        if strings.ToLower(strings.TrimSpace(course.Name)) == strings.ToLower(param) {
+            if(result == "") {
+                result = course.Code
+            } else if course.Code[2] != '/' {
+                auxResult = "CE/CZ" + course.Code[2:]
+            }
+        }
+    }
+    return result, auxResult
+}
+
+func getSchedulePrint(param class) string {
+    var result string
+    if(param.Type == "LEC/STUDIO") {
+        result = "Lecture"
+    } else if(param.Type == "TUT") {
+        result = "Tutorial"
+    } else {
+        result = param.Type
+    }
+    result = result + " on " + param.Day + ", " + param.Time + " at " + param.Venue
+    return result
+}
 
 func contains(slice []string, item string) bool {
     set := make(map[string]struct{}, len(slice))
@@ -89,6 +136,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     //qwordValue := "What"
     entityValue := ""
     intentValue := ""
+    number := "" // TODO: should we use integer instead?
     groupValue := make([]string, 0)
     
     if(qr.Result.Metadata.IntentName != "") {
@@ -101,20 +149,27 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     if(entityValue == "") {
         entityValue = intentValue
     }
-    
-    paramValue := ""
-    for key, _:= range qr.Result.Params {
-        fmt.Printf("%v\n", key)
-        paramValue = key
+    if(qr.Result.Params["number"] != nil) {
+        number = qr.Result.Params["number"].(string)
     }
-    if(qr.Result.Params[paramValue] != nil && len(qr.Result.Params[paramValue].([]interface{})) > 0) {
-        // TODO: handle multiple group values
-        for _, v := range qr.Result.Params[paramValue].([]interface{}) {
-            groupValue = append(groupValue, v.(string))
+    
+
+    possibleParams := []string{"Course", "Group"}
+    // for key, _:= range qr.Result.Params {
+    //     fmt.Printf("%v\n", key)
+    //     paramValue = key
+    // }
+    for _, paramValue := range possibleParams {
+        if(qr.Result.Params[paramValue] != nil && len(qr.Result.Params[paramValue].([]interface{})) > 0) {
+            // TODO: handle multiple group values
+            for _, v := range qr.Result.Params[paramValue].([]interface{}) {
+                groupValue = append(groupValue, v.(string))
+            }
+            
+            sort.Strings(groupValue)
         }
-        
-        sort.Strings(groupValue)
-    } else if(entityValue != "") {
+    }
+    if(len(groupValue) == 0 && entityValue != "") {
         groupValue = append(groupValue, "general")
     }
     
@@ -147,40 +202,45 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
     // matching with json
     if(resultMap["Result"] == "") {
-        courseIntent := []string{"course description", "course name", "au", "prereq", "course code"}
+        courseIntent := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
         courseCode := ""
-        courseName := ""
+        auxCourseCode := ""
         courseAttr := ""
         for _, param := range groupValue {
             if !contains(courseIntent, param) {
-                courseCode = param
-                courseName = param
+                courseCode, auxCourseCode = getCourseCode(param)
             } else {
                 courseAttr = param
             }
         }
         
-        // TODO: Fixed white space trimming properly
-        for _, course := range courses {
-            if strings.ToLower(course.Code) == strings.ToLower(courseCode) || 
-            strings.ToLower(strings.TrimSpace(course.Name)) == strings.ToLower(courseName) {
-                if(courseAttr == "course description") {
-                    resultMap["Result"] = course.Description
-                } else if(courseAttr == "course name") {
-                    resultMap["Result"] = course.Name
-                } else if(courseAttr == "au") {
-                    resultMap["Result"] = strconv.Itoa(course.AU)
-                } else if(courseAttr == "prereq") {
-                    resultMap["Result"] = course.PreReq
-                } else if(courseAttr == "course code") {
-                    if(resultMap["Result"] == "") {
-                        resultMap["Result"] = course.Code
-                    } else if course.Code[2] != '/' {
-                        resultMap["Result"] = "CE/CZ" + course.Code[2:]
-                    }
-                    
+        if(courseAttr == "venue" || courseAttr == "time") {
+            for _, class := range classes {
+                if strings.ToLower(class.Code) == strings.ToLower(courseCode) &&
+                class.Index == number {
+                    resultMap["Result"] = resultMap["Result"] + getSchedulePrint(class) + "\n"
                 }
-                
+            }
+        } else {
+            // TODO: Fixed white space trimming properly
+            for _, course := range courses {
+                if strings.ToLower(course.Code) == strings.ToLower(courseCode) {
+                    if(courseAttr == "course description") {
+                        resultMap["Result"] = course.Description
+                    } else if(courseAttr == "course name") {
+                        resultMap["Result"] = course.Name
+                    } else if(courseAttr == "au") {
+                        resultMap["Result"] = strconv.Itoa(course.AU)
+                    } else if(courseAttr == "prereq") {
+                        resultMap["Result"] = course.PreReq
+                    } else if(courseAttr == "course code") {
+                        if(auxCourseCode == "") {
+                            resultMap["Result"] = courseCode
+                        } else {
+                            resultMap["Result"] = auxCourseCode
+                        }
+                    }
+                }
             }
         }
     }
@@ -213,6 +273,7 @@ func main() {
         fmt.Println(err.Error())
     }
     json.Unmarshal(file, &courses)
+
     var CECourses []course
     file, err = ioutil.ReadFile("./ce.json")
     if err != nil {
@@ -220,6 +281,14 @@ func main() {
     }
     json.Unmarshal(file, &CECourses)
     courses = append(courses, CECourses...)
+
+    // Get the data of course schedules and venues
+    file, err = ioutil.ReadFile("./schedules.json")
+    if err != nil {
+        fmt.Println(err.Error())
+    }
+    json.Unmarshal(file, &classes)
+
     // start server
 
     r := mux.NewRouter()
