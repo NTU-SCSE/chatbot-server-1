@@ -85,6 +85,30 @@ func getSchedulePrint(param class) string {
     return result
 }
 
+func getIndex(code string) map[string]bool {
+    result := map[string]bool{}
+    for _, class := range classes {
+        if strings.ToLower(strings.TrimSpace(class.Code)) == strings.ToLower(code) {
+            result[class.Index] = true
+        }
+    }
+    return result
+}
+
+func getIndexString(code string) string {
+    indexList := getIndex(code)
+    indexStrings := []string{}
+    for key, _ := range indexList {
+        indexStrings = append(indexStrings, key)
+    }
+    sort.Strings(indexStrings)
+    result := ""
+    for _, key := range indexStrings {
+        result = result + key + "\n"
+    }
+    return result
+}
+
 func contains(slice []string, item string) bool {
     set := make(map[string]struct{}, len(slice))
     for _, s := range slice {
@@ -105,6 +129,9 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     db, err := storage.NewDB("test.sqlite3")
     all, _ := db.ListAll()
     body, err := ioutil.ReadAll(req.Body)
+
+    var resultMap map[string]string
+    resultMap = make(map[string]string)
     
     if err != nil {
         // TODO: Don't use panic, handle properly.
@@ -130,9 +157,19 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         fmt.Printf("%v", err)
     }
 
-	//Set the query string and your current user identifier.
+    //Set the query string and your current user identifier.
+    var qr *apiai.QueryResponse
+    if(t.Query == "reset") {
+        qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID, ResetContexts: true})
+        resultMap["Result"] = "Context has been reset."
+        resultJson, _ := json.Marshal(resultMap)
     
-    qr, err := client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
+        rw.Header().Set("Content-Type", "application/json")
+        rw.Write(resultJson)
+        return
+    } else {
+        qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
+    }
     //qwordValue := "What"
     entityValue := ""
     intentValue := ""
@@ -154,7 +191,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     }
     
 
-    possibleParams := []string{"Course", "Group"}
+    possibleParams := []string{"Course", "Group", "Course1"}
     // for key, _:= range qr.Result.Params {
     //     fmt.Printf("%v\n", key)
     //     paramValue = key
@@ -162,6 +199,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     for _, paramValue := range possibleParams {
         if(qr.Result.Params[paramValue] != nil && len(qr.Result.Params[paramValue].([]interface{})) > 0) {
             // TODO: handle multiple group values
+            fmt.Printf("Param %v %v\n", paramValue, qr.Result.Params[paramValue])
             for _, v := range qr.Result.Params[paramValue].([]interface{}) {
                 groupValue = append(groupValue, v.(string))
             }
@@ -173,8 +211,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         groupValue = append(groupValue, "general")
     }
     
-    var resultMap map[string]string
-    resultMap = make(map[string]string)
+    
     
     resultMap["Result"] = ""
     resultMap["Context"] = ""
@@ -200,12 +237,12 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         }
     }
 
+    courseIntent := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
+    courseCode := ""
+    auxCourseCode := ""
+    courseAttr := ""
     // matching with json
-    if(resultMap["Result"] == "") {
-        courseIntent := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
-        courseCode := ""
-        auxCourseCode := ""
-        courseAttr := ""
+    if(resultMap["Result"] == "") {    
         for _, param := range groupValue {
             if !contains(courseIntent, param) {
                 courseCode, auxCourseCode = getCourseCode(param)
@@ -247,11 +284,20 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
     // nothing matched
     // TODO: Handle this properly
+    fmt.Printf("%v %v %v %v\n", courseCode, intentValue, courseAttr, number)
     if(resultMap["Result"] == "") {
-        resultMap["Result"] = "One more time?"
+        if intentValue[:6] == "Course" && courseAttr != "venue" && courseAttr != "time" {
+            resultMap["Result"] = "What do you want to know about " + groupValue[0] + "?"+
+            "\n1. Course Name\n2. Academic Units\n3.Course description\n4. Class schedule\n5. Venues"
+        } else if intentValue[:6] == "Course" {
+            resultMap["Result"] = "Please specify your index number.\n" + getIndexString(courseCode)
+        } else {
+            resultMap["Result"] = "One more time?"
+        }
     }
     // or we can use:
     // qr.Result.Fulfillment.Speech
+    
 
     resultJson, _ := json.Marshal(resultMap)
 
