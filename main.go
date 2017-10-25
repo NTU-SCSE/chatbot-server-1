@@ -242,7 +242,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     auxCourseCode := ""
     courseAttr := ""
     // matching with json
-    if(resultMap["Result"] == "") {    
+    if(resultMap["Result"] == "" && len(intentValue) >= 6 && intentValue[:6] == "Course") {    
         for _, param := range groupValue {
             if !contains(courseIntent, param) {
                 courseCode, auxCourseCode = getCourseCode(param)
@@ -286,11 +286,20 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     // TODO: Handle this properly
     fmt.Printf("%v %v %v %v\n", courseCode, intentValue, courseAttr, number)
     if(resultMap["Result"] == "") {
-        if intentValue[:6] == "Course" && courseAttr != "venue" && courseAttr != "time" {
-            resultMap["Result"] = "What do you want to know about " + groupValue[0] + "?"+
+        if intentValue[:4] == "SCSE" {
+            resultMap["Result"] = "Find out more about SCSE courses by specifying the course code or course name.\n"
+            qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID, ResetContexts: true})
+        } else if intentValue[:6] == "Course" && courseCode == "" {
+            resultMap["Result"] = "Please specify the course code or course name."
+            qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID, ResetContexts: true})
+        } else if intentValue[:6] == "Course" && courseAttr != "venue" && courseAttr != "time" {
+            resultMap["Result"] = "What do you want to know about " + courseCode + "?"+
             "\n1. Course Name\n2. Academic Units\n3.Course description\n4. Class schedule\n5. Venues"
         } else if intentValue[:6] == "Course" {
             resultMap["Result"] = "Please specify your index number.\n" + getIndexString(courseCode)
+        } else if intentValue[:6] == "Hostel" {
+            resultMap["Result"] = "What do you want to know about " + groupValue[0] + "?" +
+            "\n1. Application\n2. Criteria\n3. Fee\n"
         } else {
             resultMap["Result"] = "One more time?"
         }
