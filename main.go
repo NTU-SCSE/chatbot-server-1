@@ -298,7 +298,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         } else if intentValue[:6] == "Course" {
             resultMap["Result"] = "Please specify your index number.\n" + getIndexString(courseCode)
         } else if intentValue[:6] == "Hostel" {
-            resultMap["Result"] = "What do you want to know about " + groupValue[0] + "?" +
+            resultMap["Result"] = "What do you want to know about NTU Hostel Accomodation?" +
             "\n1. Application\n2. Criteria\n3. Fee\n"
         } else {
             resultMap["Result"] = "One more time?"
