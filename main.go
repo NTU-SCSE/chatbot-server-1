@@ -161,7 +161,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     var qr *apiai.QueryResponse
     if(t.Query == "reset") {
         qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID, ResetContexts: true})
-        resultMap["Result"] = "Context has been reset."
+        resultMap["Result"] = "reset"
         resultJson, _ := json.Marshal(resultMap)
     
         rw.Header().Set("Content-Type", "application/json")
