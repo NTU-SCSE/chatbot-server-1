@@ -5,7 +5,7 @@ import (
     "sort"
     "reflect"
 	"net/http"
-	
+    
     "io/ioutil"
     "encoding/json"
     "github.com/gorilla/mux"
@@ -13,6 +13,7 @@ import (
     "./storage"
     "strconv"
     "strings"    
+    "os"
     "github.com/marcossegovia/apiai-go"    
 )
 
@@ -157,6 +158,15 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         fmt.Printf("%v", err)
     }
 
+    // log into file
+    f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    if(err != nil) {
+        fmt.Printf("error %v", err)
+    }
+    defer f.Close()
+    f.WriteString("Query from: " + t.SessionID + "\r\n")
+    f.WriteString(t.Query + "\r\n")
+
     //Set the query string and your current user identifier.
     var qr *apiai.QueryResponse
     if(t.Query == "reset") {
@@ -166,6 +176,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     
         rw.Header().Set("Content-Type", "application/json")
         rw.Write(resultJson)
+        f.WriteString("----------\r\n")
         return
     } else {
         qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
@@ -307,6 +318,11 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     // or we can use:
     // qr.Result.Fulfillment.Speech
     
+
+    // log to file
+    f.WriteString("Response:\r\n")
+    f.WriteString(strings.Replace(resultMap["Result"], "\n", "\r\n", -1) + "\r\n")
+    f.WriteString("----------\r\n")
 
     resultJson, _ := json.Marshal(resultMap)
 
