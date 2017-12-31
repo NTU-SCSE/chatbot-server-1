@@ -5,7 +5,7 @@ import (
     "sort"
     "reflect"
 	"net/http"
-    
+    "./utils"
     "io/ioutil"
     "encoding/json"
     "github.com/gorilla/mux"
@@ -22,6 +22,7 @@ import (
 type query_struct struct {
     Query string
     SessionID string
+    Enum []string   `json:",omitempty"`
 }
 
 type response struct {
@@ -131,8 +132,8 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     all, _ := db.ListAll()
     body, err := ioutil.ReadAll(req.Body)
 
-    var resultMap map[string]string
-    resultMap = make(map[string]string)
+    var resultMap map[string]interface{}
+    resultMap = make(map[string]interface{})
     
     if err != nil {
         // TODO: Don't use panic, handle properly.
@@ -179,7 +180,11 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
         f.WriteString("----------\r\n")
         return
     } else {
-        qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
+        if ind, err := strconv.Atoi(t.Query); err == nil && len(t.Enum) > 0 && ind > 0 && ind <= len(t.Enum) {
+            qr, err = client.Query(apiai.Query{Query: []string{t.Enum[ind - 1]}, SessionId: t.SessionID})
+        } else {
+            qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID})
+        }        
     }
     //qwordValue := "What"
     entityValue := ""
@@ -226,7 +231,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     
     resultMap["Result"] = ""
     resultMap["Context"] = ""
-
+    resultMap["Enum"] = ""
     // TODO: Handle multiple intents.
     if(qr.Result.Contexts != nil && len(qr.Result.Contexts) > 0) {
         resultMap["Context"] = qr.Result.Contexts[0].Name
@@ -266,7 +271,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
             for _, class := range classes {
                 if strings.ToLower(class.Code) == strings.ToLower(courseCode) &&
                 class.Index == number {
-                    resultMap["Result"] = resultMap["Result"] + getSchedulePrint(class) + "\n"
+                    resultMap["Result"] = resultMap["Result"].(string) + getSchedulePrint(class) + "\n"
                 }
             }
         } else {
@@ -304,13 +309,17 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
             resultMap["Result"] = "Please specify the course code or course name."
             qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: t.SessionID, ResetContexts: true})
         } else if intentValue[:6] == "Course" && courseAttr != "venue" && courseAttr != "time" {
-            resultMap["Result"] = "What do you want to know about " + courseCode + "?"+
-            "\n1. Course Name\n2. Academic Units\n3.Course description\n4. Class schedule\n5. Venues"
+            temp := []string{"Course Name", "Academic Units", "Course description", "Class schedule", "Venues"}
+            str := utils.GetEnum(temp)
+            resultMap["Result"] = "What do you want to know about " + courseCode + "?"+ str
+            resultMap["Enum"] = temp
         } else if intentValue[:6] == "Course" {
             resultMap["Result"] = "Please specify your index number.\n" + getIndexString(courseCode)
         } else if intentValue[:6] == "Hostel" {
-            resultMap["Result"] = "What do you want to know about NTU Hostel Accomodation?" +
-            "\n1. Application\n2. Criteria\n3. Fee\n"
+            temp := []string{"Application", "Criteria", "Fee"}
+            str := utils.GetEnum(temp)
+            resultMap["Result"] = "What do you want to know about NTU Hostel Accomodation?" + str
+            resultMap["Enum"] = temp
         } else {
             resultMap["Result"] = "One more time?"
         }
@@ -321,7 +330,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
     // log to file
     f.WriteString("Response:\r\n")
-    f.WriteString(strings.Replace(resultMap["Result"], "\n", "\r\n", -1) + "\r\n")
+    f.WriteString(strings.Replace(resultMap["Result"].(string), "\n", "\r\n", -1) + "\r\n")
     f.WriteString("----------\r\n")
 
     resultJson, _ := json.Marshal(resultMap)
@@ -339,6 +348,9 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
 func main() {
     // Get the data of courses from json files
+    temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
+    result := utils.GetEnum(temp)
+    
     file, err := ioutil.ReadFile("./cs.json")
     if err != nil {
         fmt.Println(err.Error())
