@@ -15,9 +15,19 @@ import (
     "strings"    
     "os"
     "github.com/marcossegovia/apiai-go"    
+    "github.com/tidwall/gjson"
+    "regexp"
 )
 
 // "github.com/kamalpy/apiai-go"
+
+type param map[string]interface{}
+
+type context map[string]interface{}
+
+type metadata struct {
+    IntentName string `json:intentName`
+}
 
 type query_struct struct {
     Query string
@@ -50,6 +60,11 @@ type class struct {
 
 var courses []course
 var classes []class
+
+func parseCourseCode(param string) string {
+    var validCode = regexp.MustCompile(`^c[z|e][0-9]{4}$`)
+    return validCode.FindString(param)
+}
 
 func getCourseCode(param string) (string, string) {
     param = strings.TrimSpace(param)
@@ -126,10 +141,84 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world! Your URL: %s", r.URL.Path[1:])
 }
 
-
-func queryHandler(rw http.ResponseWriter, req *http.Request) {
+func webhookHandler(rw http.ResponseWriter, req *http.Request) {
     db, err := storage.NewDB("test.sqlite3")
     all, _ := db.ListAll()
+    body, err := ioutil.ReadAll(req.Body)
+
+    if(err != nil) {
+        panic(err)
+    }
+    //fmt.Println(string(body[:]))
+    fullJSON := string(body[:])
+
+    // Get query parameters, sort them
+    paramsJSON := gjson.Get(fullJSON, "result.parameters")
+    params := make([]string, 0)
+    paramsJSON.ForEach(func(key, value gjson.Result) bool {
+        for _, elem := range value.Array() {
+            params = append(params, elem.String())
+        }
+        return true
+    })
+    sort.Strings(params)
+
+    //originalRequest := gjson.Get(string(body[:]), "originalRequest.data.message.text")
+
+    // get original request text, intent and contexts
+    originalRequest := gjson.Get(fullJSON, "result.resolvedQuery")
+    intent := gjson.Get(fullJSON, "result.metadata.intentName")
+    contextsJSON := gjson.Get(fullJSON, "result.contexts")
+    contexts := make([]string, 0)
+    for _, elem := range contextsJSON.Array() {
+        contexts = append(contexts, gjson.Get(elem.String(), "name").String())
+    }
+
+    fmt.Println(intent)
+    fmt.Println(originalRequest)
+    fmt.Println(params)
+    fmt.Println(contexts)
+
+    // preparing response
+    var resultMap map[string]interface{}
+    resultMap = make(map[string]interface{})
+    resultMap["displayText"] = "Test Response"
+    resultMap["speech"] = "Response not found"
+    resultMap["data"] = ""
+    resultMap["contextOut"] = []string{}
+    resultMap["source"] = "Hello"
+
+    if(strings.Compare(intent.String(), "Course") == 0) {
+        // super hack here. TODO: get course code properly from params
+        for _, elem := range params {
+            courseCode := parseCourseCode(elem)
+            if(courseCode != "") {
+                fmt.Println(courseCode)
+                course, _ := db.GetCourseByCode(courseCode)
+                fmt.Println(course)
+                resultMap["speech"] = course.Description
+            }
+        }
+    } else {
+        for _, elem := range all {
+            dbValue := strings.Split(elem.Query, ",")    
+            sort.Strings(dbValue)
+            if(strings.Compare(intent.String(), elem.Intent) == 0 && reflect.DeepEqual(params, dbValue)) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
+                resultMap["speech"] = elem.Value
+            }
+        }
+    }
+
+    resultJson, _ := json.Marshal(resultMap)
+    
+    rw.Header().Set("Content-Type", "application/json")
+        
+    rw.Write(resultJson)
+}
+
+func queryHandler(rw http.ResponseWriter, req *http.Request) {
+    // db, err := storage.NewDB("test.sqlite3")
+    // all, _ := db.ListAll()
     body, err := ioutil.ReadAll(req.Body)
 
     var resultMap map[string]interface{}
@@ -245,13 +334,13 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     // fmt.Printf("Context: %v", resultMap["Context"])
 
     // matching with Database
-    for _, elem := range all {
-        dbValue := strings.Split(elem.Query, ",")    
-        sort.Strings(dbValue)
-        if(strings.Compare(entityValue, elem.Entity) == 0 && reflect.DeepEqual(groupValue, dbValue)) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
-            resultMap["Result"] = elem.Value
-        }
-    }
+    // for _, elem := range all {
+    //     dbValue := strings.Split(elem.Query, ",")    
+    //     sort.Strings(dbValue)
+    //     if(strings.Compare(entityValue, elem.Entity) == 0 && reflect.DeepEqual(groupValue, dbValue)) { //&& strings.Compare(qwordValue, elem.QWord) == 0) {
+    //         resultMap["Result"] = elem.Value
+    //     }
+    // }
 
     courseIntent := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
     courseCode := ""
@@ -348,15 +437,15 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
 
 func main() {
     // Get the data of courses from json files
-    temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
-    result := utils.GetEnum(temp)
+    //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
+    //result := utils.GetEnum(temp)
     
     file, err := ioutil.ReadFile("./cs.json")
     if err != nil {
         fmt.Println(err.Error())
     }
     json.Unmarshal(file, &courses)
-
+    
     var CECourses []course
     file, err = ioutil.ReadFile("./ce.json")
     if err != nil {
@@ -373,10 +462,11 @@ func main() {
     json.Unmarshal(file, &classes)
 
     // start server
-
+    fmt.Println("Server started...")
     r := mux.NewRouter()
     r.HandleFunc("/", handler)
     r.HandleFunc("/query", queryHandler)
+    r.HandleFunc("/webhook", webhookHandler)
 
     // Apply the CORS middleware to our top-level router, with the defaults.
     http.ListenAndServe(":8080", cors.Default().Handler(r))

@@ -12,6 +12,11 @@ type DB interface {
     // CreateUser(user models.User) error
     // GetUser(userName string) (*models.User, error)
     ListAll() ([]models.General, error)
+    ListAllCourses() ([]models.Course, error)
+    AddCourse(course *models.Course) (error)
+    GetCourseByName(name string) (*models.Course, error)
+    GetCourseByCode(code string) (*models.Course, error)
+    PopulateCoursesData()
     // DeleteUser(userName string) error
 }
 
