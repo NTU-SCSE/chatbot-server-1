@@ -13,6 +13,7 @@ type DB interface {
     // GetUser(userName string) (*models.User, error)
     ListAll() ([]models.General, error)
     ListAllCourses() ([]models.Course, error)
+    ListRecordsByIntent(tableName string) ([]models.Record, error)
     AddCourse(course *models.Course) (error)
     GetCourseByName(name string) (*models.Course, error)
     GetCourseByCode(code string) (*models.Course, error)

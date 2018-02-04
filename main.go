@@ -1,6 +1,7 @@
 package main
 
 import (
+    "log"
     "fmt"
     "sort"
     "reflect"
@@ -17,6 +18,7 @@ import (
     "github.com/marcossegovia/apiai-go"    
     "github.com/tidwall/gjson"
     "regexp"
+    "time"
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -60,6 +62,19 @@ type class struct {
 
 var courses []course
 var classes []class
+
+func timeFunction(start time.Time, name string) {
+    elapsed := time.Since(start)
+    log.Printf("%s %s", name, elapsed)
+    f, err := os.OpenFile("log-alpha2.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    if(err != nil) {
+        fmt.Printf("error %v", err)
+    }
+    defer f.Close()
+    f.WriteString("time: " + elapsed.String() + "\r\n")
+    f.WriteString("----------\r\n")
+    // log.Printf("%s", elapsed)
+}
 
 func parseCourseCode(param string) string {
     var validCode = regexp.MustCompile(`^c[z|e][0-9]{4}$`)
@@ -141,7 +156,41 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world! Your URL: %s", r.URL.Path[1:])
 }
 
+func dummyWebhookHandler(rw http.ResponseWriter, req *http.Request) {
+    defer timeFunction(time.Now(), "d")
+    body, _ := ioutil.ReadAll(req.Body)
+    fullJSON := string(body[:])
+    originalRequest := gjson.Get(fullJSON, "result.resolvedQuery")
+    client, _ := apiai.NewClient(
+        &apiai.ClientConfig{
+			// Token:      "c49f70c867c54ff49d054455b3153e61 ",
+			Token:      "031636d290f341729417585f09f1ebc4",
+            QueryLang:  "en",    //Default en
+            SpeechLang: "en-US", //Default en-US
+        },
+	)
+	sessionID := "456"
+    // _, _ = client.Query(apiai.Query{Query: []string{"do you know me?"}, SessionId: sessionID})
+    _, _ = client.Query(apiai.Query{Query: []string{originalRequest.String()}, SessionId: sessionID})
+    
+    resultMap := make(map[string]interface{})
+    
+       
+    resultMap["displayText"] = "Test Response"
+    resultMap["speech"] = "Response not found"
+    resultMap["data"] = ""
+    resultMap["contextOut"] = []string{}
+    resultMap["source"] = "Hello"
+
+    resultJson, _ := json.Marshal(resultMap)
+    
+    rw.Header().Set("Content-Type", "application/json")
+        
+    rw.Write(resultJson)
+}
+
 func webhookHandler(rw http.ResponseWriter, req *http.Request) {
+    defer timeFunction(time.Now(), "w")
     db, err := storage.NewDB("test.sqlite3")
     all, _ := db.ListAll()
     body, err := ioutil.ReadAll(req.Body)
@@ -181,9 +230,9 @@ func webhookHandler(rw http.ResponseWriter, req *http.Request) {
     resultMap = make(map[string]interface{})
 
     // for debugging
-    fmt.Println(originalRequest)
-    fmt.Println(params)
-    fmt.Println(intent)
+    // fmt.Println(originalRequest)
+    // fmt.Println(params)
+    // fmt.Println(intent)
 
     // TODO: fill with proper values here
     resultMap["displayText"] = "Test Response"
@@ -231,6 +280,149 @@ func webhookHandler(rw http.ResponseWriter, req *http.Request) {
             break
         }
     }
+
+    resultJson, _ := json.Marshal(resultMap)
+    
+    rw.Header().Set("Content-Type", "application/json")
+        
+    rw.Write(resultJson)
+}
+
+func webhookHandlerV1(rw http.ResponseWriter, req *http.Request) {
+    defer timeFunction(time.Now(), "w")
+    db, err := storage.NewDB("test.sqlite3")
+    body, err := ioutil.ReadAll(req.Body)
+
+    if(err != nil) {
+        panic(err)
+    }
+    //fmt.Println(string(body[:]))
+    fullJSON := string(body[:])
+    
+    // Get session ID
+    sessionID := gjson.Get(fullJSON, "sessionId")
+
+    // Get query parameters, sort them
+    paramsJSON := gjson.Get(fullJSON, "result.parameters")
+    params := make([]string, 0)
+    paramsJSON.ForEach(func(key, value gjson.Result) bool {
+        for _, elem := range value.Array() {
+            if(elem.String() != "") {
+                params = append(params, strings.ToLower(elem.String()))
+            }
+        }
+        return true
+    })
+    sort.Strings(params)
+
+    //originalRequest := gjson.Get(string(body[:]), "originalRequest.data.message.text")
+
+    // get original request text, intent and contexts
+    originalRequest := gjson.Get(fullJSON, "result.resolvedQuery")
+    intent := gjson.Get(fullJSON, "result.metadata.intentName")
+    contextsJSON := gjson.Get(fullJSON, "result.contexts")
+    contexts := make([]string, 0)
+    for _, elem := range contextsJSON.Array() {
+        contexts = append(contexts, gjson.Get(elem.String(), "name").String())
+    }
+
+    // preparing response
+    var resultMap map[string]interface{}
+    resultMap = make(map[string]interface{})
+
+    // for debugging
+    // fmt.Println(originalRequest)
+    // fmt.Println(params)
+    // fmt.Println(intent)
+
+    // TODO: fill with proper values here
+    resultMap["displayText"] = "Test Response"
+    resultMap["speech"] = "Response not found"
+    resultMap["data"] = ""
+    resultMap["contextOut"] = []string{}
+    resultMap["source"] = "Hello"
+
+    // file logging
+    f, err := os.OpenFile("log-alpha2.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    if(err != nil) {
+        fmt.Printf("error %v", err)
+    }
+    defer f.Close()
+    f.WriteString("Query from: " + sessionID.String() + "\r\n")
+    f.WriteString(originalRequest.String() + "\r\n")
+    f.WriteString("----------\r\n")
+    f.WriteString("Intent: \r\n" + intent.String() + "\r\n")
+    f.WriteString("----------\r\n")
+
+    if(strings.Compare(intent.String(), "Course") == 0) {
+        // course related
+        for _, elem := range params {
+            courseCode := parseCourseCode(elem)
+            if(courseCode != "") {
+                course, _ := db.GetCourseByCode(courseCode)
+                for _, field := range params {
+                    if(field == "course code") {
+                        resultMap["speech"] = course.Code
+                    } else if(field == "course name") {
+                        resultMap["speech"] = course.Name
+                    } else if(field == "au") {
+                        resultMap["speech"] = course.AU
+                    } else if(field == "course description") {
+                        resultMap["speech"] = course.Description
+                    } else if(field == "prereq") {
+                        resultMap["speech"] = course.PreReq
+                    }
+                }
+            }
+        }
+    } else {
+        // other queries
+        all, _ := db.ListRecordsByIntent(intent.String())
+        maxMatchParams := 0
+        for _, elem := range all {
+            dbValue := strings.Split(elem.Params, ",")
+            for index, _ := range dbValue {
+                dbValue[index] = strings.TrimSpace(dbValue[index])
+                dbValue[index] = strings.ToLower(dbValue[index])
+            }
+            sort.Strings(dbValue)
+            currentMatchParams := 0
+            for _, param := range dbValue {
+                if contains(params, param) {
+                    currentMatchParams += 1
+                }
+                // default response, if any
+                if maxMatchParams == 0 && param == "default" {
+                    resultMap["speech"] = elem.Response
+                }
+            }
+            if(currentMatchParams > maxMatchParams) {
+                maxMatchParams = currentMatchParams
+                resultMap["speech"] = elem.Response
+            }
+        }
+    }
+
+    // default fallback: direct to google search, get the first result
+    if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
+        resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" + 
+            strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=000348109821987500770%3Ar1ufthpxqxg&key=AIzaSyDW0l64m7xweAo28Z_q3yAskU_d5fbevGw")
+        if err != nil {
+            // handle error
+        }
+        defer resp.Body.Close()
+        body, err := ioutil.ReadAll(resp.Body)
+        results := gjson.Get(string(body[:]), "items")
+        for _, elem := range results.Array() {
+            link := gjson.Get(elem.String(), "link").String()
+            resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
+            break
+        }
+    }
+
+    f.WriteString("Response:\r\n")
+    f.WriteString(strings.Replace(resultMap["speech"].(string), "\n", "\r\n", -1) + "\r\n")
+    f.WriteString("----------\r\n")
 
     resultJson, _ := json.Marshal(resultMap)
     
@@ -327,7 +519,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     for _, paramValue := range possibleParams {
         if(qr.Result.Params[paramValue] != nil && len(qr.Result.Params[paramValue].([]interface{})) > 0) {
             // TODO: handle multiple group values
-            fmt.Printf("Param %v %v\n", paramValue, qr.Result.Params[paramValue])
+            // fmt.Printf("Param %v %v\n", paramValue, qr.Result.Params[paramValue])
             for _, v := range qr.Result.Params[paramValue].([]interface{}) {
                 groupValue = append(groupValue, v.(string))
             }
@@ -490,6 +682,8 @@ func main() {
     r.HandleFunc("/", handler)
     r.HandleFunc("/query", queryHandler)
     r.HandleFunc("/webhook", webhookHandler)
+    r.HandleFunc("/webhook-v1", webhookHandlerV1)
+    r.HandleFunc("/dummy-webhook", dummyWebhookHandler)
 
     // Apply the CORS middleware to our top-level router, with the defaults.
     http.ListenAndServe(":8080", cors.Default().Handler(r))
