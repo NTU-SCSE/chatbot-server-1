@@ -267,7 +267,7 @@ func webhookHandler(rw http.ResponseWriter, req *http.Request) {
     // default fallback: direct to google search, get the first result
     if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
         resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" + 
-            strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=000348109821987500770%3Ar1ufthpxqxg&key=AIzaSyDW0l64m7xweAo28Z_q3yAskU_d5fbevGw")
+            "+ntu singapore" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=000348109821987500770%3Ar1ufthpxqxg&key=AIzaSyDW0l64m7xweAo28Z_q3yAskU_d5fbevGw")
         if err != nil {
             // handle error
         }
