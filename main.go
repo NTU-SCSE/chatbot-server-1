@@ -66,7 +66,7 @@ var classes []class
 func timeFunction(start time.Time, name string) {
     elapsed := time.Since(start)
     log.Printf("%s %s", name, elapsed)
-    f, err := os.OpenFile("log-alpha2.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    f, err := os.OpenFile("log-alpha2.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
     if(err != nil) {
         fmt.Printf("error %v", err)
     }
@@ -343,7 +343,7 @@ func webhookHandlerV1(rw http.ResponseWriter, req *http.Request) {
     resultMap["source"] = "Hello"
 
     // file logging
-    f, err := os.OpenFile("log-alpha2.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    f, err := os.OpenFile("log-alpha2.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
     if(err != nil) {
         fmt.Printf("error %v", err)
     }
@@ -464,7 +464,7 @@ func queryHandler(rw http.ResponseWriter, req *http.Request) {
     }
 
     // log into file
-    f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY, 0644)
+    f, err := os.OpenFile("log.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
     if(err != nil) {
         fmt.Printf("error %v", err)
     }
