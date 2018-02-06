@@ -305,15 +305,26 @@ func webhookHandlerV1(rw http.ResponseWriter, req *http.Request) {
     // Get query parameters, sort them
     paramsJSON := gjson.Get(fullJSON, "result.parameters")
     params := make([]string, 0)
+    var number string
+    hasNumber := false
     paramsJSON.ForEach(func(key, value gjson.Result) bool {
         for _, elem := range value.Array() {
             if(elem.String() != "") {
-                params = append(params, strings.ToLower(elem.String()))
+                // TODO: check DialogFlow system number entity instead
+                if _, err := strconv.Atoi(elem.String()); err == nil {
+                    number = elem.String()
+                    hasNumber = true
+                } else {
+                    params = append(params, strings.ToLower(elem.String()))
+                }
             }
         }
         return true
     })
     sort.Strings(params)
+    if hasNumber {
+        params[0] = params[0] + number
+    }
 
     //originalRequest := gjson.Get(string(body[:]), "originalRequest.data.message.text")
 
@@ -375,6 +386,9 @@ func webhookHandlerV1(rw http.ResponseWriter, req *http.Request) {
                 }
             }
         }
+    } else if strings.Compare(intent.String(), "location") == 0 {
+        // location queries
+        resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" + params[0] + "\r\n"
     } else {
         // other queries
         all, _ := db.ListRecordsByIntent(intent.String())
