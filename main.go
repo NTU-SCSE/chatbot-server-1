@@ -388,7 +388,8 @@ func webhookHandlerV1(rw http.ResponseWriter, req *http.Request) {
         }
     } else if strings.Compare(intent.String(), "location") == 0 {
         // location queries
-        resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" + params[0] + "\r\n"
+        resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" +
+        strings.Replace(params[0], " ", "%20", -1) + "\r\n"
     } else {
         // other queries
         all, _ := db.ListRecordsByIntent(intent.String())
