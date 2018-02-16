@@ -701,7 +701,9 @@ func main() {
     r.HandleFunc("/dummy-webhook", dummyWebhookHandler)
 
     // Apply the CORS middleware to our top-level router, with the defaults.
-    http.ListenAndServe(":8080", cors.Default().Handler(r))
+    //http.ListenAndServe(":8080", cors.Default().Handler(r))
+    err = http.ListenAndServeTLS(":8080", "/etc/letsencrypt/live/www.pieceofcode.org/fullchain.pem", "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem", cors.Default().Handler(r))
+    fmt.Println(err.Error())
 }
 // todo: fix typo in application security json data
 // todo: fix computer security entity
