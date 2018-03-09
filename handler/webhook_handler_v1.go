@@ -14,6 +14,7 @@ import (
     "strings"
     "os"
     "../config"
+    "bytes"
 )
 
 func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWriter,*http.Request) {
@@ -30,6 +31,19 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
         
         // Get session ID
         sessionID := gjson.Get(fullJSON, "sessionId")
+
+        // Check the source
+        spellCheckApplied := true
+        if (strings.Compare(sessionID.String(), "11111111-1111-1111-1111-111111111111") == 0) {
+            // second query with spell checking applied
+            spellCheckApplied = false
+        }
+        // fmt.Println(spellCheckApplied)
+        // querySource := gjson.Get(fullJSON, "originalRequest.source")
+        // if(querySource.String() == "") {
+        //     // second query with spell checking applied
+        //     fromFacebook = false
+        // }
 
         // Get query parameters, sort them
         paramsJSON := gjson.Get(fullJSON, "result.parameters")
@@ -149,18 +163,37 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
 
         // default fallback: direct to google search, get the first result
         if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
-            resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" + 
-                "ntu+singapore+" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=" + conf.SearchEngineID + "&key=" + conf.ApiKey)
-            if err != nil {
-                // handle error
-            }
-            defer resp.Body.Close()
-            body, err := ioutil.ReadAll(resp.Body)
-            results := gjson.Get(string(body[:]), "items")
-            for _, elem := range results.Array() {
-                link := gjson.Get(elem.String(), "link").String()
-                resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
-                break
+            if(spellCheckApplied) {
+                resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" + 
+                    "ntu+singapore+" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=" + conf.SearchEngineID + "&key=" + conf.ApiKey)
+                if err != nil {
+                    // handle error
+                }
+                defer resp.Body.Close()
+                body, err := ioutil.ReadAll(resp.Body)
+                results := gjson.Get(string(body[:]), "items")
+                for _, elem := range results.Array() {
+                    link := gjson.Get(elem.String(), "link").String()
+                    resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
+                    break
+                }
+            } else {
+                // TODO: move to config
+                url := "https://www.pieceofcode.org:8080/spellcheck"
+
+                var jsonStr = []byte(`{"Query":"`+ originalRequest.String() +`"}`)
+                req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+                req.Header.Set("Content-Type", "application/json")
+
+                client := &http.Client{}
+                resp, err := client.Do(req)
+                if err != nil {
+                    panic(err)
+                }
+                defer resp.Body.Close()
+
+                body, _ := ioutil.ReadAll(resp.Body)
+                resultMap["speech"] = gjson.Get(string(body[:]), "Result")
             }
         }
 

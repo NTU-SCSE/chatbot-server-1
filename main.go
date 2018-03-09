@@ -5,6 +5,7 @@ import (
 	"net/http"
     "github.com/gorilla/mux"
     "github.com/rs/cors"
+    "github.com/sajari/fuzzy"
     "./handler"    
     "./course"
     "./config"
@@ -40,7 +41,12 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
+    // spell checking module
+    fmt.Println("Loading Spell Checking module...")
+    model, _ := fuzzy.Load("spellcheck/model")
+    
     // Read configuration file
+    fmt.Println("Reading Configurations...")
     var conf config.ServerConfig
     var googleConf config.GoogleSearchConfig
     var dialogflowConf config.DialogflowConfig
@@ -49,6 +55,7 @@ func main() {
     if err != nil {
         fmt.Println(err.Error())
     }
+    
     json.Unmarshal(file, &conf)
     json.Unmarshal(file, &googleConf)
     json.Unmarshal(file, &dialogflowConf)
@@ -68,6 +75,7 @@ func main() {
     r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf))
     r.HandleFunc("/dummy-webhook", handler.DummyWebhookHandler)
     r.HandleFunc("/internal-query", handler.NewInternalHandler(&dialogflowConf))
+    r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(&dialogflowConf, model))
 
     // Apply the CORS middleware to our top-level router, with the defaults.
     if(conf.IsProduction) {
