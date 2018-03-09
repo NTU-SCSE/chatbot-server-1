@@ -9,6 +9,8 @@ import (
     "../config"
 	"strings"
 	"os"
+	"../utils"
+	"time"
 )
 
 func spellCheck(model *fuzzy.Model, query string) string {
@@ -21,6 +23,7 @@ func spellCheck(model *fuzzy.Model, query string) string {
 
 func NewSpellCheckHandler(conf *config.DialogflowConfig, model *fuzzy.Model) func(http.ResponseWriter, *http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
+		defer utils.TimeFunction(time.Now(), "spell")
         body, err := ioutil.ReadAll(req.Body)
         
         resultMap := make(map[string]interface{})
