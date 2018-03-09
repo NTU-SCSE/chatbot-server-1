@@ -7,6 +7,10 @@ import (
     "github.com/rs/cors"
     "./handler"    
     "./course"
+    "./config"
+    "io/ioutil"
+    "encoding/json"
+    "strconv"
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -36,6 +40,14 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
+    // Read configuration file
+    var conf config.ServerConfig
+    file, err := ioutil.ReadFile("./config/config.json")
+    if err != nil {
+        fmt.Println(err.Error())
+    }
+    json.Unmarshal(file, &conf)
+
     // Get the data of courses from json files
     //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
     //result := utils.GetEnum(temp)
@@ -43,15 +55,7 @@ func main() {
     // start server
     course := course.NewCourse()
 
-    fmt.Println("Server started...")
     r := mux.NewRouter()
-
-    // set up the registered routes
-    // for _, rt := range(routes) {
-    //     fmt.Println("Registering...")
-    //     fmt.Println(rt.path)
-    //     r.HandleFunc(rt.path, rt.handler).Methods(rt.method)
-    // }
 
     r.HandleFunc("/", defaultHandler)
     r.HandleFunc("/query", handler.NewQueryHandler(course))
@@ -61,13 +65,13 @@ func main() {
     r.HandleFunc("/internal-query", handler.InternalHandler)
 
     // Apply the CORS middleware to our top-level router, with the defaults.
-    // TODO: move this to const
-    IS_PRODUCTION := false
-    if(IS_PRODUCTION) {
-        err := http.ListenAndServeTLS(":8080", "/etc/letsencrypt/live/www.pieceofcode.org/fullchain.pem", "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem", cors.Default().Handler(r))
+    if(conf.IsProduction) {
+        fmt.Println("Starting a production server on port %d...\n", conf.Port)
+        err := http.ListenAndServeTLS(":" + strconv.Itoa(conf.Port), conf.CertFile, conf.KeyFile, cors.Default().Handler(r))
         fmt.Println(err.Error())
     } else {
-        http.ListenAndServe(":8080", cors.Default().Handler(r))
+        fmt.Printf("Starting a development local server on port %d...\n", conf.Port)
+        http.ListenAndServe(":" + strconv.Itoa(conf.Port), cors.Default().Handler(r))
     }
     
     

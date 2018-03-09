@@ -1,0 +1,6 @@
+{
+    "is_production": false,
+    "port": 8080,
+    "cert_file": "/etc/letsencrypt/live/www.pieceofcode.org/fullchain.pem",
+    "key_file": "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem"
+}
