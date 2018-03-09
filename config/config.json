@@ -2,5 +2,8 @@
     "is_production": false,
     "port": 8080,
     "cert_file": "/etc/letsencrypt/live/www.pieceofcode.org/fullchain.pem",
-    "key_file": "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem"
+    "key_file": "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem",
+
+    "search_engine_id": "000348109821987500770%3Ar1ufthpxqxg",
+    "api_key": "AIzaSyCzEigjog5rt_VThZf8QE0oaNVh4uhc93s"
 }

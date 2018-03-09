@@ -42,11 +42,13 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
     // Read configuration file
     var conf config.ServerConfig
+    var googleConf config.GoogleSearchConfig
     file, err := ioutil.ReadFile("./config/config.json")
     if err != nil {
         fmt.Println(err.Error())
     }
     json.Unmarshal(file, &conf)
+    json.Unmarshal(file, &googleConf)
 
     // Get the data of courses from json files
     //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
@@ -60,7 +62,7 @@ func main() {
     r.HandleFunc("/", defaultHandler)
     r.HandleFunc("/query", handler.NewQueryHandler(course))
     r.HandleFunc("/webhook", handler.WebhookHandler)
-    r.HandleFunc("/webhook-v1", handler.WebhookHandlerV1)
+    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf))
     r.HandleFunc("/dummy-webhook", handler.DummyWebhookHandler)
     r.HandleFunc("/internal-query", handler.InternalHandler)
 
