@@ -193,7 +193,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
                 defer resp.Body.Close()
 
                 body, _ := ioutil.ReadAll(resp.Body)
-                resultMap["speech"] = gjson.Get(string(body[:]), "Result")
+                resultMap["speech"] = gjson.Get(string(body[:]), "Result").String()
             }
         }
 
