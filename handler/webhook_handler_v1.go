@@ -33,10 +33,10 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
         sessionID := gjson.Get(fullJSON, "sessionId")
 
         // Check the source
-        spellCheckApplied := true
+        spellCheckApplied := false
         if (strings.Compare(sessionID.String(), "11111111-1111-1111-1111-111111111111") == 0) {
             // second query with spell checking applied
-            spellCheckApplied = false
+            spellCheckApplied = true
         }
         // fmt.Println(spellCheckApplied)
         // querySource := gjson.Get(fullJSON, "originalRequest.source")
