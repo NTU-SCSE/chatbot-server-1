@@ -18,7 +18,10 @@ func main() {
 	// Train multiple words simultaneously by passing an array of strings to the "Train" function
 	// words := []string{"bob", "your", "uncle", "dynamite", "delicate", "biggest", "big", "bigger", "aunty", "you're"}
 	model.Train(fuzzy.SampleEnglish())
-	model.SaveLight("model_small")
+	
+	// use SaveLight to get smaller model, but not useful for incremental corpus
+	model.Save("model")
+	
 	// Check Spelling
 	fmt.Println("\nSPELL CHECKS")
 	fmt.Println("	Deletion test (yor) : ", model.SpellCheck("yor"))
