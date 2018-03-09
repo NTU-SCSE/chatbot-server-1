@@ -69,7 +69,6 @@ func NewSpellCheckHandler(conf *config.DialogflowConfig, model *fuzzy.Model) fun
         var qr *apiai.QueryResponse
         qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "11111111-1111-1111-1111-111111111111"})
 
-        fmt.Println(qr.Result.Fulfillment.Speech)
         resultMap["Result"] = qr.Result.Fulfillment.Speech
 
         resultJson, _ := json.Marshal(resultMap)
