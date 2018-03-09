@@ -9,6 +9,8 @@ import (
     "../config"
 	"strings"
 	"os"
+	"../utils"
+	"time"
 )
 
 func spellCheck(model *fuzzy.Model, query string) string {
@@ -21,6 +23,7 @@ func spellCheck(model *fuzzy.Model, query string) string {
 
 func NewSpellCheckHandler(conf *config.DialogflowConfig, model *fuzzy.Model) func(http.ResponseWriter, *http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
+		defer utils.TimeFunction(time.Now(), "spell")
         body, err := ioutil.ReadAll(req.Body)
         
         resultMap := make(map[string]interface{})
@@ -66,7 +69,6 @@ func NewSpellCheckHandler(conf *config.DialogflowConfig, model *fuzzy.Model) fun
         var qr *apiai.QueryResponse
         qr, err = client.Query(apiai.Query{Query: []string{t.Query}, SessionId: "11111111-1111-1111-1111-111111111111"})
 
-        fmt.Println(qr.Result.Fulfillment.Speech)
         resultMap["Result"] = qr.Result.Fulfillment.Speech
 
         resultJson, _ := json.Marshal(resultMap)

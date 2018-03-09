@@ -19,7 +19,8 @@ import (
 
 func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWriter,*http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
-        defer utils.TimeFunction(time.Now(), "w")
+        // defer utils.TimeFunction(time.Now(), "w")
+        defer utils.TimeFunction(time.Now(), "query")
         db, err := storage.NewDB("test.sqlite3")
         body, err := ioutil.ReadAll(req.Body)
 
