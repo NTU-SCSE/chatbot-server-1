@@ -43,12 +43,15 @@ func main() {
     // Read configuration file
     var conf config.ServerConfig
     var googleConf config.GoogleSearchConfig
+    var dialogflowConf config.DialogflowConfig
+
     file, err := ioutil.ReadFile("./config/config.json")
     if err != nil {
         fmt.Println(err.Error())
     }
     json.Unmarshal(file, &conf)
     json.Unmarshal(file, &googleConf)
+    json.Unmarshal(file, &dialogflowConf)
 
     // Get the data of courses from json files
     //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
@@ -64,7 +67,7 @@ func main() {
     r.HandleFunc("/webhook", handler.WebhookHandler)
     r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf))
     r.HandleFunc("/dummy-webhook", handler.DummyWebhookHandler)
-    r.HandleFunc("/internal-query", handler.InternalHandler)
+    r.HandleFunc("/internal-query", handler.NewInternalHandler(&dialogflowConf))
 
     // Apply the CORS middleware to our top-level router, with the defaults.
     if(conf.IsProduction) {
@@ -75,9 +78,6 @@ func main() {
         fmt.Printf("Starting a development local server on port %d...\n", conf.Port)
         http.ListenAndServe(":" + strconv.Itoa(conf.Port), cors.Default().Handler(r))
     }
-    
-    
-    
 }
 // todo: fix typo in application security json data
 // todo: fix computer security entity

@@ -10,3 +10,9 @@ type GoogleSearchConfig struct {
 	SearchEngineID	string	`json: "search_engine_id"`
 	ApiKey			string	`json: "api_key`
 }
+
+type DialogflowConfig struct {
+	Token		string	`json: "dialogflow_token"`
+	QueryLang	string	`json: "dialogflow_query_lang"`
+	SpeechLang	string	`json: "dialogflow_speech_lang"`
+}

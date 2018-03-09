@@ -5,5 +5,9 @@
     "key_file": "/etc/letsencrypt/live/www.pieceofcode.org/privkey.pem",
 
     "search_engine_id": "000348109821987500770%3Ar1ufthpxqxg",
-    "api_key": "AIzaSyCzEigjog5rt_VThZf8QE0oaNVh4uhc93s"
+    "api_key": "AIzaSyCzEigjog5rt_VThZf8QE0oaNVh4uhc93s",
+
+    "dialogflow_token": "58be6f8f4fb9447693edd36fb975bece",
+    "dialogflow_query_lang": "en",
+    "dialogflow_speech_lang": "en-US"
 }
