@@ -18,14 +18,12 @@ func NewInternalHandler(conf *config.AgentConfig) func(http.ResponseWriter, *htt
     return func(rw http.ResponseWriter, req *http.Request) {
         body, err := ioutil.ReadAll(req.Body)
         
-        var resultMap map[string]interface{}
-        resultMap = make(map[string]interface{})
-        
         if err != nil {
-            // TODO: Don't use panic, handle properly.
             panic(err)
         }
 
+        var resultMap map[string]interface{}
+        resultMap = make(map[string]interface{})
         var t query_struct
 
         err = json.Unmarshal(body, &t)

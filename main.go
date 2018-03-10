@@ -35,7 +35,6 @@ type response struct {
 }
 
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
-    // TODO: Handle this properly.
 	fmt.Fprintf(w, "Hello, world! Your URL: %s", r.URL.Path[1:])
 }
 

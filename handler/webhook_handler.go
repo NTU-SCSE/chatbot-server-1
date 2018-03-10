@@ -57,12 +57,12 @@ func WebhookHandler(rw http.ResponseWriter, req *http.Request) {
     // fmt.Println(params)
     // fmt.Println(intent)
 
-    // TODO: fill with proper values here
-    resultMap["displayText"] = "Test Response"
+    // The following fields are not used for now
+    // resultMap["displayText"] = "Test Response"
+    // resultMap["data"] = ""
     resultMap["speech"] = "Response not found"
-    resultMap["data"] = ""
     resultMap["contextOut"] = []string{}
-    resultMap["source"] = "Hello"
+    resultMap["source"] = "golang_server"
 
     if(strings.Compare(intent.String(), "Course") == 0) {
         // course related

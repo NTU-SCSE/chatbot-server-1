@@ -61,7 +61,6 @@ func NewClassifierWebhookHandler(conf *config.DialogflowConfig, extAgentsConf *c
         
         resultMap := make(map[string]interface{})
         
-        // TODO: Fix this!! what are these fields? anything else needed?
         resultMap["speech"] = qr.Result.Fulfillment.Speech
         resultMap["source"] = class + "_agent:" + classifierResult
 

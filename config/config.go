@@ -3,6 +3,10 @@ import (
 	"strings"
 )
 
+const (
+	SPELLCHECKER_URL	= "https://www.pieceofcode.org:8080/spellcheck"
+)
+
 type ServerConfig struct {
 	IsProduction	bool	`json:"is_production"`
 	Port			int		`json:"port"`

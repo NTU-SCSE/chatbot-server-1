@@ -90,12 +90,12 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, useSpellchecker bool) 
         // fmt.Println(params)
         // fmt.Println(intent)
 
-        // TODO: fill with proper values here
-        resultMap["displayText"] = "Test Response"
+        // The following fields are not used for now
+        // resultMap["displayText"] = "Test Response"
+        // resultMap["data"] = ""
         resultMap["speech"] = "Response not found"
-        resultMap["data"] = ""
         resultMap["contextOut"] = []string{}
-        resultMap["source"] = "Hello"
+        resultMap["source"] = "golang_server"
 
         // file logging
         f, err := os.OpenFile("log-alpha2.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
@@ -179,8 +179,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, useSpellchecker bool) 
                     break
                 }
             } else {
-                // TODO: move to const
-                url := "https://www.pieceofcode.org:8080/spellcheck"
+                url := config.SPELLCHECKER_URL
 
                 var jsonStr = []byte(`{"Query":"`+ originalRequest.String() +`"}`)
                 request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))

@@ -26,12 +26,11 @@ func NewSpellCheckHandler(conf *config.AgentConfig, model *fuzzy.Model) func(htt
 		defer utils.TimeFunction(time.Now(), "spell")
         body, err := ioutil.ReadAll(req.Body)
         
-        resultMap := make(map[string]interface{})
-        
         if err != nil {
-            // TODO: Don't use panic, handle properly.
             panic(err)
         }
+
+        resultMap := make(map[string]interface{})
 
         var t query_struct
 
