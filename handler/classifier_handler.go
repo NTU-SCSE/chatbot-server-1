@@ -46,6 +46,7 @@ func NewClassifierWebhookHandler(conf *config.DialogflowConfig, extAgentsConf *c
 
         // Send query to the respective agent        
         // TODO: Fix this when we have proper classifier integrations and agent names
+        classifierResult := class // temporary var for debugging purpose
         class = "faqs"
         agentConfig := config.GetAgentConfigByName(conf, class)
         apiaiClient, _ := apiai.NewClient(
@@ -62,7 +63,7 @@ func NewClassifierWebhookHandler(conf *config.DialogflowConfig, extAgentsConf *c
         
         // TODO: Fix this!! what are these fields? anything else needed?
         resultMap["speech"] = qr.Result.Fulfillment.Speech
-        resultMap["source"] = class + "_agent"
+        resultMap["source"] = class + "_agent:" + classifierResult
 
         resultJson, _ := json.Marshal(resultMap)
         

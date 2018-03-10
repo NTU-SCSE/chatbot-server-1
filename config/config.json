@@ -22,5 +22,5 @@
         }
     ],
 
-    "classifier_url": "13.250.47.203:5000/predict"
+    "classifier_url": "http://13.250.47.203:5000/predict"
 }
