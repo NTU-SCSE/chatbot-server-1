@@ -22,8 +22,6 @@ var createCoursesQuery string = `create table if not exists Courses
 	description TEXT
 )`
 
-
-
 func initDBSchema(db *sqlx.DB) error {
 	_, err := db.Exec(createGeneralQuery)
 	_, err = db.Exec(createCoursesQuery)

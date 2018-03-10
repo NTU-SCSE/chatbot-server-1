@@ -1,0 +1,42 @@
+[
+    {
+        "r_course_yr":  "CSC;;1;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CSC;;2;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CSC;;3;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CSC;;4;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CE;;1;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CE;;2;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CE;;3;F",
+        "acad":  "2017",
+        "semester": "1"
+    },
+    {
+        "r_course_yr":  "CE;;4;F",
+        "acad":  "2017",
+        "semester": "1"
+    }
+]

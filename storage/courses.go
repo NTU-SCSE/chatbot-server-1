@@ -1,13 +1,14 @@
 package storage
 
-
 import (
-	"io/ioutil"
-	"encoding/json"
-	"../models"
-	"strings"
 	"database/sql"
+	"encoding/json"
+	"io/ioutil"
+	"strings"
+
+	"../models"
 )
+
 var listAllCourses string = "select * from Courses"
 var addCourseQuery string = "INSERT INTO Courses (code, name, au, preReq, description) VALUES(:code, :name, :au, :preReq, :description)"
 var getCourseByCodeQuery string = "Select * from Courses where code = ?"
@@ -30,29 +31,29 @@ func (db *dbImpl) ListAllCourses() ([]models.Course, error) {
 	return res, err
 }
 
-func (db *dbImpl) AddCourse(course *models.Course) (error) {
+func (db *dbImpl) AddCourse(course *models.Course) error {
 	_, _ = db.sqliteDB.NamedExec(addCourseQuery, course)
 	return nil
 }
 
 func (db *dbImpl) GetCourseByCode(code string) (*models.Course, error) {
-    result := models.Course{}
-    err := db.sqliteDB.Get(&result, getCourseByCodeQuery, code)
-    
-    if err == sql.ErrNoRows {
-        return nil, nil
-    }
+	result := models.Course{}
+	err := db.sqliteDB.Get(&result, getCourseByCodeQuery, code)
 
-    return &result, err
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	return &result, err
 }
 
 func (db *dbImpl) GetCourseByName(name string) (*models.Course, error) {
-    result := models.Course{}
-    err := db.sqliteDB.Get(&result, getCourseByNameQuery, name)
-    
-    if err == sql.ErrNoRows {
-        return nil, nil
-    }
+	result := models.Course{}
+	err := db.sqliteDB.Get(&result, getCourseByNameQuery, name)
 
-    return &result, err
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	return &result, err
 }
