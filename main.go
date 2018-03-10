@@ -1,18 +1,19 @@
 package main
 
 import (
-    "fmt"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
-    "github.com/gorilla/mux"
-    "github.com/rs/cors"
-    "github.com/sajari/fuzzy"
-    "./handler"    
-    "./course"
-    "./config"
-    "io/ioutil"
-    "encoding/json"
-    "strconv"
-    "./storage"
+	"strconv"
+
+	"./config"
+	"./course"
+	"./handler"
+	"./storage"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
+	"github.com/sajari/fuzzy"
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -22,77 +23,77 @@ type param map[string]interface{}
 type context map[string]interface{}
 
 type metadata struct {
-    IntentName string `json:intentName`
+	IntentName string `json:intentName`
 }
 
 type query_struct struct {
-    Query string
-    SessionID string
-    Enum []string   `json:",omitempty"`
+	Query     string
+	SessionID string
+	Enum      []string `json:",omitempty"`
 }
 
 type response struct {
-    Response string
+	Response string
 }
 
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, world! Your URL: %s", r.URL.Path[1:])
 }
 
-
 func main() {
-    // spell checking module
-    fmt.Println("Loading Spell Checking module...")
-    model, _ := fuzzy.Load("spellcheck/model")
-    
-    // Read configuration file
-    fmt.Println("Reading Configurations...")
-    var conf config.ServerConfig
-    var googleConf config.GoogleSearchConfig
-    var dialogflowConf config.DialogflowConfig
-    var externalAgents config.ExternalAgentsConfig
+	// spell checking module
+	fmt.Println("Loading Spell Checking module...")
+	model, _ := fuzzy.Load("spellcheck/model")
 
-    file, err := ioutil.ReadFile("./config/config.json")
-    if err != nil {
-        fmt.Println(err.Error())
-    }
-    
-    json.Unmarshal(file, &conf)
-    json.Unmarshal(file, &googleConf)
-    json.Unmarshal(file, &dialogflowConf)
-    json.Unmarshal(file, &externalAgents)
+	// Read configuration file
+	fmt.Println("Reading Configurations...")
+	var conf config.ServerConfig
+	var googleConf config.GoogleSearchConfig
+	var dialogflowConf config.DialogflowConfig
+	var externalAgents config.ExternalAgentsConfig
 
-    // Loading database
-    fmt.Println("Loading database...")
-    db, err := storage.NewDB("test.sqlite3")
-    course := course.NewCourse()
+	file, err := ioutil.ReadFile("./config/config.json")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-    // Get the data of courses from json files
-    //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
-    //result := utils.GetEnum(temp)
+	json.Unmarshal(file, &conf)
+	json.Unmarshal(file, &googleConf)
+	json.Unmarshal(file, &dialogflowConf)
+	json.Unmarshal(file, &externalAgents)
 
-    // start server
-    fmt.Println("Starting the server...")
-    r := mux.NewRouter()
+	// Loading database
+	fmt.Println("Loading database...")
+	db, err := storage.NewDB("test.sqlite3")
+	course := course.NewCourse()
 
-    r.HandleFunc("/", defaultHandler)
-    r.HandleFunc("/query", handler.NewQueryHandler(course))
-    r.HandleFunc("/webhook", handler.WebhookHandler)
-    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf, db, conf.UseSpellchecker))
-    r.HandleFunc("/classifier-webhook", handler.NewClassifierWebhookHandler(&dialogflowConf, &externalAgents))
-    r.HandleFunc("/internal-query", handler.NewInternalHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs")))
-    r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs"), model))
+	// Get the data of courses from json files
+	//temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
+	//result := utils.GetEnum(temp)
 
-    // Apply the CORS middleware to our top-level router, with the defaults.
-    if(conf.IsProduction) {
-        fmt.Println("Starting a production server on port %d...\n", conf.Port)
-        err := http.ListenAndServeTLS(":" + strconv.Itoa(conf.Port), conf.CertFile, conf.KeyFile, cors.Default().Handler(r))
-        fmt.Println(err.Error())
-    } else {
-        fmt.Printf("Starting a development local server on port %d...\n", conf.Port)
-        http.ListenAndServe(":" + strconv.Itoa(conf.Port), cors.Default().Handler(r))
-    }
+	// start server
+	fmt.Println("Starting the server...")
+	r := mux.NewRouter()
+
+	r.HandleFunc("/", defaultHandler)
+	r.HandleFunc("/query", handler.NewQueryHandler(course))
+	r.HandleFunc("/webhook", handler.WebhookHandler)
+	r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf, db, conf.UseSpellchecker))
+	r.HandleFunc("/classifier-webhook", handler.NewClassifierWebhookHandler(&dialogflowConf, &externalAgents))
+	r.HandleFunc("/internal-query", handler.NewInternalHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs")))
+	r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs"), model))
+
+	// Apply the CORS middleware to our top-level router, with the defaults.
+	if conf.IsProduction {
+		fmt.Println("Starting a production server on port %d...\n", conf.Port)
+		err := http.ListenAndServeTLS(":"+strconv.Itoa(conf.Port), conf.CertFile, conf.KeyFile, cors.Default().Handler(r))
+		fmt.Println(err.Error())
+	} else {
+		fmt.Printf("Starting a development local server on port %d...\n", conf.Port)
+		http.ListenAndServe(":"+strconv.Itoa(conf.Port), cors.Default().Handler(r))
+	}
 }
+
 // todo: fix typo in application security json data
 // todo: fix computer security entity
 // todo: fix ce1004
