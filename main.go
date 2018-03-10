@@ -12,6 +12,7 @@ import (
     "io/ioutil"
     "encoding/json"
     "strconv"
+    "./storage"
 )
 
 // "github.com/kamalpy/apiai-go"
@@ -60,20 +61,24 @@ func main() {
     json.Unmarshal(file, &googleConf)
     json.Unmarshal(file, &dialogflowConf)
     json.Unmarshal(file, &externalAgents)
-    
+
+    // Loading database
+    fmt.Println("Loading database...")
+    db, err := storage.NewDB("test.sqlite3")
+    course := course.NewCourse()
+
     // Get the data of courses from json files
     //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
     //result := utils.GetEnum(temp)
 
     // start server
-    course := course.NewCourse()
-
+    fmt.Println("Starting the server...")
     r := mux.NewRouter()
 
     r.HandleFunc("/", defaultHandler)
     r.HandleFunc("/query", handler.NewQueryHandler(course))
     r.HandleFunc("/webhook", handler.WebhookHandler)
-    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf, conf.UseSpellchecker))
+    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf, db, conf.UseSpellchecker))
     r.HandleFunc("/classifier-webhook", handler.NewClassifierWebhookHandler(&dialogflowConf, &externalAgents))
     r.HandleFunc("/internal-query", handler.NewInternalHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs")))
     r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs"), model))

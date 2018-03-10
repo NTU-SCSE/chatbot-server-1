@@ -7,7 +7,6 @@ import (
     
 )
 
-// TODO: Use singleton for db
 type DB interface {
     // CreateUser(user models.User) error
     // GetUser(userName string) (*models.User, error)

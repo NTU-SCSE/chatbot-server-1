@@ -12,6 +12,8 @@ import (
 	"sort"
 	"reflect"
 )
+
+// TODO: Please remove if obsolete
 func WebhookHandler(rw http.ResponseWriter, req *http.Request) {
     defer utils.TimeFunction(time.Now(), "w")
     db, err := storage.NewDB("test.sqlite3")
