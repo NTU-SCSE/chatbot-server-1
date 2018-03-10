@@ -25,7 +25,6 @@ func NewQueryHandler(c *course.Course) func(http.ResponseWriter, *http.Request) 
 		resultMap = make(map[string]interface{})
 
 		if err != nil {
-			// TODO: Don't use panic, handle properly.
 			panic(err)
 		}
 
@@ -78,7 +77,7 @@ func NewQueryHandler(c *course.Course) func(http.ResponseWriter, *http.Request) 
 		//qwordValue := "What"
 		entityValue := ""
 		intentValue := ""
-		number := "" // TODO: should we use integer instead?
+		number := ""
 		groupValue := make([]string, 0)
 
 		if qr.Result.Metadata.IntentName != "" {

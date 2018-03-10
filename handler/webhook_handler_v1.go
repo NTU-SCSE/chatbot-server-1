@@ -51,6 +51,8 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// Get query parameters, sort them
 		paramsJSON := gjson.Get(fullJSON, "result.parameters")
 		params := make([]string, 0)
+
+		// handle location number here
 		var number string
 		hasNumber := false
 		paramsJSON.ForEach(func(key, value gjson.Result) bool {
@@ -77,6 +79,8 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// get original request text, intent and contexts
 		originalRequest := gjson.Get(fullJSON, "result.resolvedQuery")
 		intent := gjson.Get(fullJSON, "result.metadata.intentName")
+
+		// contexts are not used for now
 		contextsJSON := gjson.Get(fullJSON, "result.contexts")
 		contexts := make([]string, 0)
 		for _, elem := range contextsJSON.Array() {
@@ -111,6 +115,10 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		f.WriteString("Intent: \r\n" + intent.String() + "\r\n")
 		f.WriteString("----------\r\n")
 
+		// Get response
+		// 1. Check if it is a course-related query, we can handle "course code", "course name", "AU", "syllabus" and "prerequisites"
+		// 2. Check if it is a location query --> returns http://maps.ntu.edu.sg/maps link for that location
+		// 3. Otherwise, check common database for matching parameters
 		if strings.Compare(intent.String(), "Course") == 0 {
 			// course related
 			for _, elem := range params {
@@ -164,7 +172,8 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 			}
 		}
 
-		// default fallback: direct to google search, get the first result
+		// Try another query with spellchecker applied, if applicable
+		// otherwise, use google custom search API as default response
 		if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
 			if !useSpellchecker || spellCheckApplied {
 				resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" +
@@ -199,14 +208,13 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 			}
 		}
 
+		// more logging
 		f.WriteString("Response:\r\n")
 		f.WriteString(strings.Replace(resultMap["speech"].(string), "\n", "\r\n", -1) + "\r\n")
 		f.WriteString("----------\r\n")
 
 		resultJson, _ := json.Marshal(resultMap)
-
 		rw.Header().Set("Content-Type", "application/json")
-
 		rw.Write(resultJson)
 	}
 }

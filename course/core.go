@@ -41,7 +41,7 @@ func NewCourse() *Course {
 }
 
 func ParseCourseCode(param string) string {
-	var validCode = regexp.MustCompile(`^c[z|e][0-9]{4}$`)
+	var validCode = regexp.MustCompile(`^c[z|e](/c[z|e])?[0-9]{4}$`)
 	return validCode.FindString(param)
 }
 
