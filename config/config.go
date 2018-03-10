@@ -8,6 +8,7 @@ type ServerConfig struct {
 	Port			int		`json:"port"`
 	CertFile		string	`json:"cert_file"`
 	KeyFile			string	`json:"key_file"`
+	UseSpellchecker	bool	`json:"use_spellchecker"`
 }
 
 type GoogleSearchConfig struct {

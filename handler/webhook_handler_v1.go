@@ -17,7 +17,7 @@ import (
     "bytes"
 )
 
-func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWriter,*http.Request) {
+func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, useSpellchecker bool) func(http.ResponseWriter,*http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
         // defer utils.TimeFunction(time.Now(), "w")
         defer utils.TimeFunction(time.Now(), "query")
@@ -164,7 +164,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
 
         // default fallback: direct to google search, get the first result
         if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
-            if(spellCheckApplied) {
+            if(!useSpellchecker || spellCheckApplied) {
                 resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" + 
                     "ntu+singapore+" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=" + conf.SearchEngineID + "&key=" + conf.ApiKey)
                 if err != nil {

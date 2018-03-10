@@ -74,7 +74,7 @@ func main() {
     r.HandleFunc("/", defaultHandler)
     r.HandleFunc("/query", handler.NewQueryHandler(course))
     r.HandleFunc("/webhook", handler.WebhookHandler)
-    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf))
+    r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf, conf.UseSpellchecker))
     r.HandleFunc("/classifier-webhook", handler.NewClassifierWebhookHandler(&dialogflowConf, &externalAgents))
     r.HandleFunc("/internal-query", handler.NewInternalHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs")))
     r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs"), model))
