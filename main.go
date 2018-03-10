@@ -50,6 +50,7 @@ func main() {
     var conf config.ServerConfig
     var googleConf config.GoogleSearchConfig
     var dialogflowConf config.DialogflowConfig
+    var externalAgents config.ExternalAgentsConfig
 
     file, err := ioutil.ReadFile("./config/config.json")
     if err != nil {
@@ -59,7 +60,8 @@ func main() {
     json.Unmarshal(file, &conf)
     json.Unmarshal(file, &googleConf)
     json.Unmarshal(file, &dialogflowConf)
-
+    json.Unmarshal(file, &externalAgents)
+    
     // Get the data of courses from json files
     //temp := []string{"course description", "course name", "au", "prereq", "course code", "time", "venue"}
     //result := utils.GetEnum(temp)
@@ -73,9 +75,9 @@ func main() {
     r.HandleFunc("/query", handler.NewQueryHandler(course))
     r.HandleFunc("/webhook", handler.WebhookHandler)
     r.HandleFunc("/webhook-v1", handler.NewWebhookHandlerV1(&googleConf))
-    r.HandleFunc("/dummy-webhook", handler.DummyWebhookHandler)
-    r.HandleFunc("/internal-query", handler.NewInternalHandler(&dialogflowConf))
-    r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(&dialogflowConf, model))
+    r.HandleFunc("/classifier-webhook", handler.NewClassifierWebhookHandler(&dialogflowConf, &externalAgents))
+    r.HandleFunc("/internal-query", handler.NewInternalHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs")))
+    r.HandleFunc("/spellcheck", handler.NewSpellCheckHandler(config.GetAgentConfigByName(&dialogflowConf, "faqs"), model))
 
     // Apply the CORS middleware to our top-level router, with the defaults.
     if(conf.IsProduction) {

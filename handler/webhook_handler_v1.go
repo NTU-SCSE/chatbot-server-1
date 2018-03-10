@@ -179,15 +179,15 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig) func(http.ResponseWrit
                     break
                 }
             } else {
-                // TODO: move to config
+                // TODO: move to const
                 url := "https://www.pieceofcode.org:8080/spellcheck"
 
                 var jsonStr = []byte(`{"Query":"`+ originalRequest.String() +`"}`)
-                req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-                req.Header.Set("Content-Type", "application/json")
+                request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+                request.Header.Set("Content-Type", "application/json")
 
                 client := &http.Client{}
-                resp, err := client.Do(req)
+                resp, err := client.Do(request)
                 if err != nil {
                     panic(err)
                 }

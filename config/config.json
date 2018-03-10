@@ -7,7 +7,20 @@
     "search_engine_id": "000348109821987500770%3Ar1ufthpxqxg",
     "api_key": "AIzaSyCzEigjog5rt_VThZf8QE0oaNVh4uhc93s",
 
-    "dialogflow_token": "58be6f8f4fb9447693edd36fb975bece",
-    "dialogflow_query_lang": "en",
-    "dialogflow_speech_lang": "en-US"
+    "agents": [
+        {
+            "name": "faqs",
+            "token": "58be6f8f4fb9447693edd36fb975bece",
+            "query_lang": "en",
+            "speech_lang": "en-US"
+        },
+        {
+            "name": "masterbot",
+            "token": "c49f70c867c54ff49d054455b3153e61",
+            "query_lang": "en",
+            "speech_lang": "en-US"
+        }
+    ],
+
+    "classifier_url": "13.250.47.203:5000/predict"
 }

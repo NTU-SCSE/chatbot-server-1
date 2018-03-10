@@ -14,7 +14,7 @@ type query_struct struct {
     Enum []string   `json:",omitempty"`
 }
 
-func NewInternalHandler(conf *config.DialogflowConfig) func(http.ResponseWriter, *http.Request) {
+func NewInternalHandler(conf *config.AgentConfig) func(http.ResponseWriter, *http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
         body, err := ioutil.ReadAll(req.Body)
         

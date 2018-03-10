@@ -1,4 +1,8 @@
 package config
+import (
+	"strings"
+)
+
 type ServerConfig struct {
 	IsProduction	bool	`json:"is_production"`
 	Port			int		`json:"port"`
@@ -11,8 +15,26 @@ type GoogleSearchConfig struct {
 	ApiKey			string	`json:"api_key"`
 }
 
+type AgentConfig struct {
+	Name		string	`json:"name"`
+	Token		string	`json:"token"`
+	QueryLang	string	`json:"query_lang"`
+	SpeechLang	string	`json:"speech_lang"`
+}
+
 type DialogflowConfig struct {
-	Token		string	`json:"dialogflow_token"`
-	QueryLang	string	`json:"dialogflow_query_lang"`
-	SpeechLang	string	`json:"dialogflow_speech_lang"`
+	Agents		[]AgentConfig	`json:"agents"`
+}
+
+type ExternalAgentsConfig struct {
+	ClassifierUrl	string	`json:"classifier_url"`
+}
+
+func GetAgentConfigByName(agents *DialogflowConfig, agentName string) (*AgentConfig) {
+	for index, _ := range(agents.Agents) {
+		if(strings.Compare(agents.Agents[index].Name, agentName) == 0) {
+			return &agents.Agents[index]
+		}
+	}
+	return nil
 }

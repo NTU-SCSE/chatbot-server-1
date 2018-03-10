@@ -21,7 +21,7 @@ func spellCheck(model *fuzzy.Model, query string) string {
 	return strings.TrimSpace(res)
 }
 
-func NewSpellCheckHandler(conf *config.DialogflowConfig, model *fuzzy.Model) func(http.ResponseWriter, *http.Request) {
+func NewSpellCheckHandler(conf *config.AgentConfig, model *fuzzy.Model) func(http.ResponseWriter, *http.Request) {
     return func(rw http.ResponseWriter, req *http.Request) {
 		defer utils.TimeFunction(time.Now(), "spell")
         body, err := ioutil.ReadAll(req.Body)
