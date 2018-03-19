@@ -10,5 +10,23 @@
         "response": "You may refer to http://www.ntu.edu.sg/has/Undergraduate/Pages/NTUNewStudents.aspx  for the latest update",
         "context_in": [], 
         "context_out": []
+    },
+    {
+        "query": "cz2001 syllabus",
+        "response": "introduction  to  algorithms,  basics  for  analysis  of  algorithms,  sorting,  searching,  graphs,  basic computability and complexity theory",
+        "context_in": [], 
+        "context_out": []
+    },
+    {
+        "query": "lee wee nam library",
+        "response": "Please refer to http://maps.ntu.edu.sg/maps#q:lwn%20library",
+        "context_in": [], 
+        "context_out": []
+    },
+    {
+        "query": "cs specialization",
+        "response": "Apart from providing a solid foundation in Computer Science, the course offers various specialisations which students will undertake in the final year of study. The electives are grouped into streams, reflecting different disciplines within Computer Science.Computer and Communication Networks Computer Vision & Graphics High Performance Computing Intelligent Systems Software Engineering Information Management",
+        "context_in": [], 
+        "context_out": []
     }
 ]
