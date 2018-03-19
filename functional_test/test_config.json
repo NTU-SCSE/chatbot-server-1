@@ -1,0 +1,18 @@
+{
+    "is_exact_matching": false,
+
+    "agents": [
+        {
+            "name": "faqs",
+            "token": "58be6f8f4fb9447693edd36fb975bece",
+            "query_lang": "en",
+            "speech_lang": "en-US"
+        },
+        {
+            "name": "masterbot",
+            "token": "c49f70c867c54ff49d054455b3153e61",
+            "query_lang": "en",
+            "speech_lang": "en-US"
+        }
+    ]
+}
