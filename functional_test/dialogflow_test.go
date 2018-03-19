@@ -9,6 +9,7 @@ import (
 	"github.com/marcossegovia/apiai-go"
 	"strings"
 	"../utils"
+	"log"
 )
 
 var dialogflowConf config.DialogflowConfig
@@ -40,6 +41,7 @@ func TestDialogFlow(t *testing.T) {
 	//Set the query string and your current user identifier.
 	var qr *apiai.QueryResponse
 	testSessionID := "10101010-1010-1010-1010-101010101010"
+	
 	for _, query := range queries {
 		qr, err = client.Query(apiai.Query{Query: []string{query.Query}, SessionId: testSessionID})
 		expected := query.Response
@@ -66,12 +68,16 @@ func TestMain(m *testing.M) {
 	file, err := ioutil.ReadFile("./test_config.json")
 	if err != nil {
 		fmt.Println(err.Error())
+		log.Fatal(err)
 	}
 
 	dialogflowConf = utils.GetDialogflowConfig(file)
 	json.Unmarshal(file, &testConfig)
 
 	queryResponse, err := ioutil.ReadFile("./query_response.json")
-	json.Unmarshal(queryResponse, &queries)
+	err = json.Unmarshal(queryResponse, &queries)
+	if err != nil {
+		log.Fatal(err)
+	}
 	m.Run()
 }
