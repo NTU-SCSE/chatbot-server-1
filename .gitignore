@@ -1,0 +1,5 @@
+*.exe
+*.pdf
+*.rtf
+*.html
+/__pycache__
