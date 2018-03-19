@@ -2,4 +2,5 @@
 *.pdf
 *.rtf
 *.html
+/Static
 /__pycache__
