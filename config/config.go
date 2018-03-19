@@ -36,6 +36,10 @@ type ExternalAgentsConfig struct {
 	ClassifierUrl string `json:"classifier_url"`
 }
 
+type TestConfig struct {
+	IsExactMatching	bool	`json:"is_exact_matching"`
+}
+
 func GetAgentConfigByName(agents *DialogflowConfig, agentName string) *AgentConfig {
 	for index, _ := range agents.Agents {
 		if strings.Compare(agents.Agents[index].Name, agentName) == 0 {
