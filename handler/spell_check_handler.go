@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"../config"
@@ -14,14 +13,6 @@ import (
 	"github.com/marcossegovia/apiai-go"
 	"github.com/sajari/fuzzy"
 )
-
-func spellCheck(model *fuzzy.Model, query string) string {
-	res := ""
-	for _, word := range strings.Fields(query) {
-		res += " " + model.SpellCheck(word)
-	}
-	return strings.TrimSpace(res)
-}
 
 func NewSpellCheckHandler(conf *config.AgentConfig, model *fuzzy.Model) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
@@ -41,7 +32,7 @@ func NewSpellCheckHandler(conf *config.AgentConfig, model *fuzzy.Model) func(htt
 			panic(err)
 		}
 
-		t.Query = spellCheck(model, t.Query)
+		t.Query = utils.SpellCheck(model, t.Query)
 
 		client, err := apiai.NewClient(
 			&apiai.ClientConfig{

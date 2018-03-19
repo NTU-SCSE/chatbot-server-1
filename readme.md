@@ -17,6 +17,8 @@ go get github.com/jmoiron/sqlx
 go get github.com/marcossegovia/apiai-go
 go get github.com/mattn/go-sqlite3
 go get github.com/rs/cors
+go get github.com/sajari/fuzzy
+go get github.com/stretchr/testify/assert
 ```
 
 3. Run the server

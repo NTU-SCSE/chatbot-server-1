@@ -41,15 +41,13 @@ func NewCourse() *Course {
 }
 
 func ParseCourseCode(param string) string {
-	var validCode = regexp.MustCompile(`^c[z|e][0-9]{4}$`)
+	var validCode = regexp.MustCompile(`^c[z|e](/c[z|e])?[0-9]{4}$`)
 	return validCode.FindString(param)
 }
 
 func (c *Course) GetCourseCode(param string) (string, string) {
 	param = strings.TrimSpace(param)
 
-	// TODO: if query is "CZ#### code", it won't return CE/CZ#### format, fix this
-	// TODO: api.ai still not trained yet to recognize CE/CZ#### format
 	if _, err := strconv.Atoi(param[len(param)-4:]); err == nil {
 		return param, ""
 	}

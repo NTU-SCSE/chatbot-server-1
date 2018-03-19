@@ -1,0 +1,14 @@
+[
+    {
+        "query": "Scholarship",
+        "response": "You may wish to visit http://admissions.ntu.edu.sg/UndergraduateAdmissions/Pages/Scholarships.aspx for detailed information on eligbility criteria and application procedures for the various scholarships administered by NTU, or email to ug_scholarships@ntu.edu.sg for assistance.",
+        "context_in": [],
+        "context_out": []
+    },
+    {
+        "query": "Hostel",
+        "response": "You may refer to http://www.ntu.edu.sg/has/Undergraduate/Pages/NTUNewStudents.aspx  for the latest update",
+        "context_in": [], 
+        "context_out": []
+    }
+]
