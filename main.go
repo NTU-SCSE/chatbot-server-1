@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"./course"
 	"./handler"
 	"./storage"
+	"./utils"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/sajari/fuzzy"
@@ -47,20 +47,16 @@ func main() {
 
 	// Read configuration file
 	fmt.Println("Reading Configurations...")
-	var conf config.ServerConfig
-	var googleConf config.GoogleSearchConfig
-	var dialogflowConf config.DialogflowConfig
-	var externalAgents config.ExternalAgentsConfig
 
 	file, err := ioutil.ReadFile("./config/config.json")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	json.Unmarshal(file, &conf)
-	json.Unmarshal(file, &googleConf)
-	json.Unmarshal(file, &dialogflowConf)
-	json.Unmarshal(file, &externalAgents)
+	conf := utils.GetServerConfig(file)
+	googleConf := utils.GetGoogleSearchConfig(file)
+	dialogflowConf := utils.GetDialogflowConfig(file)
+	externalAgents := utils.GetExternalAgentConfig(file)
 
 	// Loading database
 	fmt.Println("Loading database...")

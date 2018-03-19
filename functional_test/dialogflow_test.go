@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/marcossegovia/apiai-go"
 	"strings"
+	"../utils"
 )
 
 var dialogflowConf config.DialogflowConfig
@@ -67,7 +68,7 @@ func TestMain(m *testing.M) {
 		fmt.Println(err.Error())
 	}
 
-	json.Unmarshal(file, &dialogflowConf)
+	dialogflowConf = utils.GetDialogflowConfig(file)
 	json.Unmarshal(file, &testConfig)
 
 	queryResponse, err := ioutil.ReadFile("./query_response.json")
