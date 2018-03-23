@@ -134,7 +134,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 					break
 				}
 			}
-			
+
 			for _, field := range params {
 				if field == "course code" {
 					resultMap["speech"] = module.Code
@@ -150,8 +150,10 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 			}
 		} else if strings.Compare(intent.String(), "location") == 0 {
 			// location queries
-			resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" +
+			if len(params) > 0 {
+				resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" +
 				strings.Replace(params[0], " ", "%20", -1) + "\r\n"
+			}
 		} else {
 			// other queries
 			all, _ := db.ListRecordsByIntent(intent.String())
