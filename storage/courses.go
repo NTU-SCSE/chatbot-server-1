@@ -9,10 +9,10 @@ import (
 	"../models"
 )
 
-var listAllCourses string = "select * from Courses"
+var listAllCourses string = "SELECT * FROM Courses"
 var addCourseQuery string = "INSERT INTO Courses (code, name, au, preReq, description) VALUES(:code, :name, :au, :preReq, :description)"
-var getCourseByCodeQuery string = "Select * from Courses where code = ?"
-var getCourseByNameQuery string = "Select * from Courses where name = ?"
+var getCourseByCodeQuery string = "SELECT * FROM Courses WHERE code = ?"
+var getCourseByNameQuery string = "SELECT * FROM Courses WHERE REPLACE(name, ' ', '') = REPLACE(?, ' ', '')"
 
 func (db *dbImpl) PopulateCoursesData() {
 	var courses []models.Course
