@@ -71,7 +71,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 			return true
 		})
 		sort.Strings(params)
-		if hasNumber {
+		if hasNumber && len(params) > 0 {
 			params[0] = params[0] + number
 		}
 
