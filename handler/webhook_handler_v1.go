@@ -14,6 +14,7 @@ import (
 
 	"../config"
 	"../course"
+	"../models"
 	"../storage"
 	"../utils"
 	"github.com/tidwall/gjson"
@@ -121,23 +122,30 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// 3. Otherwise, check common database for matching parameters
 		if strings.Compare(intent.String(), "Course") == 0 {
 			// course related
+			var module *models.Course
 			for _, elem := range params {
 				courseCode := course.ParseCourseCode(elem)
 				if courseCode != "" {
-					course, _ := db.GetCourseByCode(courseCode)
-					for _, field := range params {
-						if field == "course code" {
-							resultMap["speech"] = course.Code
-						} else if field == "course name" {
-							resultMap["speech"] = course.Name
-						} else if field == "au" {
-							resultMap["speech"] = course.AU
-						} else if field == "course description" {
-							resultMap["speech"] = course.Description
-						} else if field == "prereq" {
-							resultMap["speech"] = course.PreReq
-						}
-					}
+					module, _ = db.GetCourseByCode(courseCode)
+				} else {
+					module, _ = db.GetCourseByName(elem)
+				}
+				if module != nil {
+					break
+				}
+			}
+			
+			for _, field := range params {
+				if field == "course code" {
+					resultMap["speech"] = module.Code
+				} else if field == "course name" {
+					resultMap["speech"] = module.Name
+				} else if field == "au" {
+					resultMap["speech"] = module.AU
+				} else if field == "course description" {
+					resultMap["speech"] = module.Description
+				} else if field == "prereq" {
+					resultMap["speech"] = module.PreReq
 				}
 			}
 		} else if strings.Compare(intent.String(), "location") == 0 {
