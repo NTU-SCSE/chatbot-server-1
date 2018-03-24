@@ -17,6 +17,7 @@ type DB interface {
 	GetCourseByName(name string) (*models.Course, error)
 	GetCourseByCode(code string) (*models.Course, error)
 	PopulateCoursesData()
+	DeleteCourseByCode(name string) error
 	// DeleteUser(userName string) error
 }
 

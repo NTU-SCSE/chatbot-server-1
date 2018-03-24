@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"../utils"
+	"../storage"
+	"../models"
+	"encoding/json"
+	"strings"
 	"github.com/sajari/fuzzy"
 	"io/ioutil"
 	"../config"
@@ -127,6 +131,83 @@ func TestGetGoogleSearchConfig(t *testing.T) {
 		assert.Equal(t, expected[i][1], f.Type().String())
 	}
 }
+
+func TestAddAndDeleteCourses(t *testing.T) {
+	db, _ := storage.NewDB("unit_test.sqlite3")
+	var courses []models.Course
+	file, _ := ioutil.ReadFile("./test_courses.json")
+	json.Unmarshal(file, &courses)
+	for _, elem := range courses {
+		course := models.Course{strings.ToLower(elem.Code), strings.ToLower(elem.Name), elem.AU, elem.PreReq, elem.Description}
+		db.AddCourse(&course)
+	}
+	res, _ := db.ListAllCourses()
+	assert.Equal(t, len(courses), len(res))
+
+
+	for _, elem := range courses {
+		db.DeleteCourseByCode(strings.ToLower(elem.Code))
+	}
+	res, _ = db.ListAllCourses()
+	assert.Equal(t, 0, len(res))
+}
+
+func TestGetCourseByCode(t *testing.T) {
+	db, _ := storage.NewDB("unit_test.sqlite3")
+	var courses []models.Course
+	file, _ := ioutil.ReadFile("./test_courses.json")
+	json.Unmarshal(file, &courses)
+	for _, elem := range courses {
+		course := models.Course{strings.ToLower(elem.Code), strings.ToLower(elem.Name), elem.AU, elem.PreReq, elem.Description}
+		db.AddCourse(&course)
+	}
+	res, _ := db.ListAllCourses()
+	assert.Equal(t, len(courses), len(res))
+
+	for _, elem := range courses {
+		course, _ := db.GetCourseByCode(strings.ToLower(elem.Code))
+		assert.Equal(t, strings.ToLower(elem.Code), course.Code)
+		assert.Equal(t, strings.ToLower(elem.Name), course.Name)
+		assert.Equal(t, elem.AU, course.AU)
+		assert.Equal(t, elem.PreReq, course.PreReq)
+		assert.Equal(t, elem.Description, course.Description)
+	}
+
+	for _, elem := range courses {
+		db.DeleteCourseByCode(strings.ToLower(elem.Code))
+	}
+	res, _ = db.ListAllCourses()
+	assert.Equal(t, 0, len(res))
+}
+
+func TestGetCourseByName(t *testing.T) {
+	db, _ := storage.NewDB("unit_test.sqlite3")
+	var courses []models.Course
+	file, _ := ioutil.ReadFile("./test_courses.json")
+	json.Unmarshal(file, &courses)
+	for _, elem := range courses {
+		course := models.Course{strings.ToLower(elem.Code), strings.ToLower(elem.Name), elem.AU, elem.PreReq, elem.Description}
+		db.AddCourse(&course)
+	}
+	res, _ := db.ListAllCourses()
+	assert.Equal(t, len(courses), len(res))
+
+	for _, elem := range courses {
+		course, _ := db.GetCourseByName(strings.ToLower(elem.Name))
+		assert.Equal(t, strings.ToLower(elem.Code), course.Code)
+		assert.Equal(t, strings.ToLower(elem.Name), course.Name)
+		assert.Equal(t, elem.AU, course.AU)
+		assert.Equal(t, elem.PreReq, course.PreReq)
+		assert.Equal(t, elem.Description, course.Description)
+	}
+
+	for _, elem := range courses {
+		db.DeleteCourseByCode(strings.ToLower(elem.Code))
+	}
+	res, _ = db.ListAllCourses()
+	assert.Equal(t, 0, len(res))
+}
+
 func TestMain(m *testing.M) {
 	fmt.Println("Starting unit test...")
 	file, _ = ioutil.ReadFile("./config.json")
