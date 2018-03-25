@@ -19,6 +19,7 @@ go get github.com/mattn/go-sqlite3
 go get github.com/rs/cors
 go get github.com/sajari/fuzzy
 go get github.com/stretchr/testify/assert
+go get github.com/tidwall/gjson
 ```
 
 3. Run the server

@@ -9,10 +9,11 @@ import (
 	"../models"
 )
 
-var listAllCourses string = "select * from Courses"
+var listAllCourses string = "SELECT * FROM Courses"
 var addCourseQuery string = "INSERT INTO Courses (code, name, au, preReq, description) VALUES(:code, :name, :au, :preReq, :description)"
-var getCourseByCodeQuery string = "Select * from Courses where code = ?"
-var getCourseByNameQuery string = "Select * from Courses where name = ?"
+var getCourseByCodeQuery string = "SELECT * FROM Courses WHERE code = ?"
+var getCourseByNameQuery string = "SELECT * FROM Courses WHERE REPLACE(name, ' ', '') = REPLACE(?, ' ', '')"
+var deleteCourseByCodeQuery string = "DELETE FROM Courses WHERE code = ?"
 
 func (db *dbImpl) PopulateCoursesData() {
 	var courses []models.Course
@@ -34,6 +35,11 @@ func (db *dbImpl) ListAllCourses() ([]models.Course, error) {
 func (db *dbImpl) AddCourse(course *models.Course) error {
 	_, _ = db.sqliteDB.NamedExec(addCourseQuery, course)
 	return nil
+}
+
+func (db *dbImpl) DeleteCourseByCode(code string) error {
+	_, err := db.sqliteDB.Exec(deleteCourseByCodeQuery, code)
+	return err
 }
 
 func (db *dbImpl) GetCourseByCode(code string) (*models.Course, error) {

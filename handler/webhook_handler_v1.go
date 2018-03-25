@@ -14,6 +14,7 @@ import (
 
 	"../config"
 	"../course"
+	"../models"
 	"../storage"
 	"../utils"
 	"github.com/tidwall/gjson"
@@ -70,7 +71,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 			return true
 		})
 		sort.Strings(params)
-		if hasNumber {
+		if hasNumber && len(params) > 0 {
 			params[0] = params[0] + number
 		}
 
@@ -99,7 +100,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// The following fields are not used for now
 		// resultMap["displayText"] = "Test Response"
 		// resultMap["data"] = ""
-		resultMap["speech"] = "Response not found"
+		resultMap["speech"] = "Sorry, we didn't get what you mean."
 		resultMap["contextOut"] = []string{}
 		resultMap["source"] = "golang_server"
 
@@ -121,29 +122,38 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// 3. Otherwise, check common database for matching parameters
 		if strings.Compare(intent.String(), "Course") == 0 {
 			// course related
+			var module *models.Course
 			for _, elem := range params {
 				courseCode := course.ParseCourseCode(elem)
 				if courseCode != "" {
-					course, _ := db.GetCourseByCode(courseCode)
-					for _, field := range params {
-						if field == "course code" {
-							resultMap["speech"] = course.Code
-						} else if field == "course name" {
-							resultMap["speech"] = course.Name
-						} else if field == "au" {
-							resultMap["speech"] = course.AU
-						} else if field == "course description" {
-							resultMap["speech"] = course.Description
-						} else if field == "prereq" {
-							resultMap["speech"] = course.PreReq
-						}
-					}
+					module, _ = db.GetCourseByCode(courseCode)
+				} else {
+					module, _ = db.GetCourseByName(elem)
+				}
+				if module != nil {
+					break
+				}
+			}
+
+			for _, field := range params {
+				if field == "course code" {
+					resultMap["speech"] = module.Code
+				} else if field == "course name" {
+					resultMap["speech"] = module.Name
+				} else if field == "au" {
+					resultMap["speech"] = module.AU
+				} else if field == "course description" {
+					resultMap["speech"] = module.Description
+				} else if field == "prereq" {
+					resultMap["speech"] = module.PreReq
 				}
 			}
 		} else if strings.Compare(intent.String(), "location") == 0 {
 			// location queries
-			resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" +
+			if len(params) > 0 {
+				resultMap["speech"] = "Please refer to http://maps.ntu.edu.sg/maps#q:" +
 				strings.Replace(params[0], " ", "%20", -1) + "\r\n"
+			}
 		} else {
 			// other queries
 			all, _ := db.ListRecordsByIntent(intent.String())
@@ -174,7 +184,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 
 		// Try another query with spellchecker applied, if applicable
 		// otherwise, use google custom search API as default response
-		if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
+		if strings.Compare(resultMap["speech"].(string), "Sorry, we didn't get what you mean.") == 0 {
 			if !useSpellchecker || spellCheckApplied {
 				resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" +
 					"ntu+singapore+" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=" + conf.SearchEngineID + "&key=" + conf.ApiKey)
@@ -186,8 +196,10 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 				results := gjson.Get(string(body[:]), "items")
 				for _, elem := range results.Array() {
 					link := gjson.Get(elem.String(), "link").String()
-					resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
-					break
+					if strings.Contains(link, "ntu.edu.sg") {
+						resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
+						break
+					}
 				}
 			} else {
 				url := config.SPELLCHECKER_URL
