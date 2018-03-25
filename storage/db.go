@@ -1,6 +1,5 @@
 package storage
 
-// "github.com/satori/go.uuid"
 import (
 	"../models"
 	"github.com/jmoiron/sqlx"
@@ -8,8 +7,6 @@ import (
 )
 
 type DB interface {
-	// CreateUser(user models.User) error
-	// GetUser(userName string) (*models.User, error)
 	ListAll() ([]models.General, error)
 	ListAllCourses() ([]models.Course, error)
 	ListRecordsByIntent(tableName string) ([]models.Record, error)
@@ -18,7 +15,6 @@ type DB interface {
 	GetCourseByCode(code string) (*models.Course, error)
 	PopulateCoursesData()
 	DeleteCourseByCode(name string) error
-	// DeleteUser(userName string) error
 }
 
 type dbImpl struct {
