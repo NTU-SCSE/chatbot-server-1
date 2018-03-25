@@ -100,7 +100,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 		// The following fields are not used for now
 		// resultMap["displayText"] = "Test Response"
 		// resultMap["data"] = ""
-		resultMap["speech"] = "Response not found"
+		resultMap["speech"] = "Sorry, we didn't get what you mean."
 		resultMap["contextOut"] = []string{}
 		resultMap["source"] = "golang_server"
 
@@ -184,7 +184,7 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 
 		// Try another query with spellchecker applied, if applicable
 		// otherwise, use google custom search API as default response
-		if strings.Compare(resultMap["speech"].(string), "Response not found") == 0 {
+		if strings.Compare(resultMap["speech"].(string), "Sorry, we didn't get what you mean.") == 0 {
 			if !useSpellchecker || spellCheckApplied {
 				resp, err := http.Get("https://www.googleapis.com/customsearch/v1?q=" +
 					"ntu+singapore+" + strings.Replace(originalRequest.String(), " ", "+", -1) + "&cx=" + conf.SearchEngineID + "&key=" + conf.ApiKey)
@@ -196,8 +196,10 @@ func NewWebhookHandlerV1(conf *config.GoogleSearchConfig, db storage.DB, useSpel
 				results := gjson.Get(string(body[:]), "items")
 				for _, elem := range results.Array() {
 					link := gjson.Get(elem.String(), "link").String()
-					resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
-					break
+					if strings.Contains(link, "ntu.edu.sg") {
+						resultMap["speech"] = "You can find out more about it at " + link + "\r\n"
+						break
+					}
 				}
 			} else {
 				url := config.SPELLCHECKER_URL
