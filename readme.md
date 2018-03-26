@@ -23,7 +23,18 @@ go get github.com/tidwall/gjson
 ```
 
 3. Run the server
-`go run main.go`
+```
+go run main.go
+```
 You can check the server is running by accessing:
 `localhost:8080`
-There should be a "Hellow World" message if server is running correctly.
+There should be a "Hello World" message if server is running correctly.
+Note: You can change the configuration in `config/config.json`
+
+4. Course Parser module
+Please go to `courseparser` folder to access the module
+
+5. Functional Test
+You can test the end-to-end functionality of Dialogflow agent with this functional test.
+Please go to `functional_test` folder to access the module.
+You can change the target Dialogflow agent at `functional_test/test_config.json`.
